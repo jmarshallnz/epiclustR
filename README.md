@@ -24,7 +24,7 @@ where X<sub>it</sub> is an indicator variable, set to 1 if there's an outbreak a
 Data format
 -----------
 
-The data required are as follows:
+The code in the PrepareDatasets folder can be used to prepare the first three datasets. The data required are as follows:
 
 Meshblocks.txt
 
