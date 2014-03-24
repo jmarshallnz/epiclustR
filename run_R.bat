@@ -1,0 +1,1 @@
+"$RTERM$" --no-restore  --file=full_model.r --save > r_output.txt 2>&1
