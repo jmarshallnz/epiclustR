@@ -5,15 +5,21 @@ epiclustR is a spatio-temporal modelling tool for estimating the spatial and tem
 
 The model of disease is given by
 
-y_{it} = Poisson(\lambda_{it})
+y<sub>it</sub> = Poisson(lambda<sub>it</sub>)
 
 where
 
-\lambda_{it} = R_t + U_i + W_{it}
+lambda<sub>it</sub> = R<sub>t<sub> + U<sub>i</sub> + W<sub>it</sub>
 
-where R_i is a purely temporal term, U_i is a purely spatial term, and W_{it} is a spatio-temporal term.
+where R<sub>t<sub> is a purely temporal term, U<sub>i</sub> is a purely spatial term, and W<sub>it</sub> is a spatio-temporal term.
 
-We place structural priors on R_t and U_i such that R_{t+2} = Normal(2R_{t+1} - R_t, \tau_R) and U_i = Normal(\sum_{j \in N(i)} U_i/|N(i)|, \tau / |N(i)|) where N(i) is the set of regions in teh neighbourhood of region i.
+We place Gaussian structural priors on R_t and U_i such that the risk in week t+2 is a linear extrapolation of the risk in weeks t and t+1, and that the risk in region i is the average risk in neighbouring regions.
+
+The model for detecting outbreaks sets
+
+W<sub>it</sub> = Beta X<sub>it</sub>
+
+where X<sub>it</sub> is an indicator variable, set to 1 if there's an outbreak and 0 if there isn't, that is one with probability p<sub>it</sub> and Beta is the (average) size of each outbreak.  The prior on p<sub>it</sub> allows 1 outbreak per year per region on average.  Priors on p<sub>it</sub> then allow these outbreaks to be correlated through time (e.g. for a disease where person to person transmission occurs) or uncorrelated through time.  The default implementation is uncorrelated in time.
 
 Data format
 -----------
