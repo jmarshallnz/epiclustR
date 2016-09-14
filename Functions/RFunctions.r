@@ -1,10 +1,7 @@
 #Defaults
 library(MASS)
 sigmaR<-1
-kR<-1
 Rblock<-c(4,5,9,11)
-R<-matrix(rnorm(params$tps,0,1),1,params$tps)
-fe <- -10
 
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
@@ -34,12 +31,18 @@ RInitialize <- function() {
     t4[Rblock[i]]<-1
     Rmu[[i]]<<-cbind(-Rsigma[[i]]%*%t1,-Rsigma[[i]]%*%t2,-Rsigma[[i]]%*%t3,-Rsigma[[i]]%*%t4)
   }
-  acceptR<<-matrix(0,1+length(Rblock),1)
-  rejectR<<-matrix(0,1+length(Rblock),1)
+
   if (params$tidyup) {file.remove(file.path(params$outpath, "R.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "kR.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "acceptanceR.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "sumR.txt"))}
+
+  state <- list(R  = matrix(rnorm(params$tps,0,1),1,params$tps),
+                kR = 1,
+                fe = -10,
+                acceptR = matrix(0,1+length(Rblock),1),
+                rejectR = matrix(0,1+length(Rblock),1))
+  return(state)
 }
 
 RSetPriors <- function(setpriors) {
@@ -55,10 +58,16 @@ RSetPriors <- function(setpriors) {
   }
 }
 
-RUpdate <- function(i=0) {
+RUpdate <- function(i=0, state) {
+  # save current state
+  R  <- state$R
+  kR <- state$kR
+  acceptR <- state$acceptR
+  rejectR <- state$rejectR
+
   lenR <- length(R)
   # Gibb's step to update kR
-  kR<<-rgamma(1,aR+(lenR-2)/2,rate=bR+RSumFunction(R)/2)
+  kR <- rgamma(1,aR+(lenR-2)/2,rate=bR+RSumFunction(R)/2)
   method<-1+i%%(1+length(Rblock))
   endmethod<-rbinom(1,1,0.5)
   j<-1 #start of update block
@@ -67,7 +76,7 @@ RUpdate <- function(i=0) {
     if (method>length(Rblock) || (endmethod==0 && (j<3 || j>lenR-2))) {
       # Metropolis Hastings proposal step to update R.
       proposal<-rnorm(1,R[j],sd=sigmaR)
-      ap<-RLikelihood(j,k,proposal)
+      ap<-RLikelihood(j,k,R[j:k],proposal,state)
       # full conditional component of ap
       if (j>2) {ap<-ap*exp(-kR*((R[j-2]-2*R[j-1]+proposal)^2-(R[j-2]-2*R[j-1]+R[j])^2)/2)}
       if (j>1 && j<lenR) {ap<-ap*exp(-kR*((R[j-1]-2*proposal+R[j+1])^2-(R[j-1]-2*R[j]+R[j+1])^2)/2)}
@@ -91,93 +100,112 @@ RUpdate <- function(i=0) {
         }
         proposal<-mvrnorm(1,Rmu[[method]][,1]*R[j-2]+Rmu[[method]][,2]*R[j-1]+Rmu[[method]][,3]*R[k+1]+Rmu[[method]][,4]*R[k+2],Rsigma[[method]]/kR)
       }
-      ap<-RLikelihood(j,k,proposal)
+      ap<-RLikelihood(j,k,R[j:k],proposal,state)
     }
     un<-runif(1)
 #    cat("ap=", ap, "un=", un, "\n")
     if (un<=ap) {
-      R[j:k]<<-proposal
-      acceptR[method]<<-acceptR[method]+1
+      R[j:k]<-proposal
+      acceptR[method]<-acceptR[method]+1
     } else {
-      rejectR[method]<<-rejectR[method]+1
+      rejectR[method]<-rejectR[method]+1
     }
     j<-k+1
   }
+  state$kR <- kR
+  state$R  <- R
+#  cat("Ending RUpdate, dim(R)=", dim(state$R), "\n")
+  state$acceptR <- acceptR
+  state$rejectR <- rejectR
+  return(state)
 }
 
-RRisk <- function() {
-  rep(R, params$mbs)
+RRisk <- function(state) {
+  rep(state$R, params$mbs)
 }
 
-RLikelihoodR <- function(j,k,proposal) {
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(R[j:k],mbs))))
-}
-
-RLikelihoodRS <- function(j,k,proposal) {
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal+S[j:k],mbs)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(R[j:k]+S[j:k],mbs))))
-}
-
-RLikelihoodRU <- function(j,k,proposal) {# calculate the likelihood ratio
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(R[j:k],mbs)+rep(U,each=k-j+1))))
-}
-
-RLikelihoodRUW <- function(j,k,proposal) {# calculate the likelihood ratio
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]]))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]])))
-}
-
-RLikelihoodRX <- function(j,k,proposal) {
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+X[j:k,mbrg]*betaX))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+X[j:k,mbrg]*betaX)))
-}
-
-RLikelihoodRUX <- function(j,k,proposal) {
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX)))
-}
-
-RLikelihoodRUX2 <- function(j,k,proposal) {
+RLikelihoodR <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
-  den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs))) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs))))
+}
+
+RLikelihoodRS <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop+S[j:k],mbs))) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr+S[j:k],mbs))))
+}
+
+RLikelihoodRU <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1))) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1))))
+}
+
+RLikelihoodRUW <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]])) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]])))
+}
+
+RLikelihoodRX <- function(j,k,curr,propl) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+X[j:k,mbrg]*betaX)) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+X[j:k,mbrg]*betaX)))
+}
+
+RLikelihoodRUX <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX)) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX)))
+}
+
+RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
+  mbs <- ncol(n)
+  fe  <- state$fe
+  num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
+  den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
   prod(num / den)
 }
 
-RLikelihoodRUX3 <- function(j,k,proposal) {
-  mbs <- params$mbs
-  if (j==1) {
-    prod(dpois(cases[1,],n*exp(fe+rep(proposal,mbs)+U+X[1,mbrg]*betaX[mbrg]))/dpois(cases[1,],n*exp(fe+rep(R[1],mbs)+U+X[1,mbrg]*betaX[mbrg])))
+RLikelihoodRUX3 <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  if (j==1) { # only called if k==j
+    prod(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg])) /
+         dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg])))
   } else {
-    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
+    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))) /
+         dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
   }
 }
 
-RLikelihoodRUX4 <- function(j,k,proposal) {
-  mbs <- params$mbs
-  if (j==1) {
-    prod(dpois(cases[1,],n*exp(fe+rep(proposal,mbs)+U+X[1,mbrg]*betaX[mbrg]))/dpois(cases[1,],n*exp(fe+rep(R[1],mbs)+U+X[1,mbrg]*betaX[mbrg])))
+RLikelihoodRUX4 <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  if (j==1) { # only called if k==j
+    prod(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg])) /
+         dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg])))
   } else {
-    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep( R[j:k] ,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
+    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))) /
+         dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
   }
 }
 
-RLikelihoodBR <- function(j,k,proposal) {
-  mbs <- params$mbs
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(proposal,mbs)+rep(B[Blink],each=k-j+1)))/dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(R[j:k],mbs)+rep(B[Blink],each=k-j+1))))
+RLikelihoodBR <- function(j,k,curr,prop) {
+  mbs <- ncol(n)
+  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(B[Blink],each=k-j+1))) /
+       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(B[Blink],each=k-j+1))))
 }
 
-RSample <- function() {
-  fe<<-fe+mean(R)
-  R<<-R-mean(R)
-  cat(c(t(R),"\n"),file=file.path(params$outpath, "R.txt"),append=TRUE,sep=" ")
-  cat(kR,file=file.path(params$outpath, "kR.txt"),append=TRUE,sep="\n")
-  cat(c(t(acceptR[]/(acceptR[]+rejectR[])),"\n"),file=file.path(params$outpath, "acceptanceR.txt"),append=TRUE,sep=" ")
-  acceptR[]<<-rep(0,1+length(Rblock))
-  rejectR[]<<-rep(0,1+length(Rblock))
-  cat(RSumFunction(R),"\n",file=file.path(params$outpath, "sumR.txt"),append=TRUE)
+RSample <- function(state) {
+  state$fe <- state$fe + mean(state$R)
+  state$R  <- state$R - mean(state$R)
+  cat(c(t(state$R),"\n"),file=file.path(params$outpath, "R.txt"),append=TRUE,sep=" ")
+  cat(state$kR,file=file.path(params$outpath, "kR.txt"),append=TRUE,sep="\n")
+  cat(c(t(state$acceptR[]/(state$acceptR[]+state$rejectR[])),"\n"),file=file.path(params$outpath, "acceptanceR.txt"),append=TRUE,sep=" ")
+  state$acceptR[] <- rep(0,1+length(Rblock))
+  state$rejectR[] <- rep(0,1+length(Rblock))
+  cat(RSumFunction(state$R),"\n",file=file.path(params$outpath, "sumR.txt"),append=TRUE)
+  return(state)
 }
 
 RConvergence <- function() {

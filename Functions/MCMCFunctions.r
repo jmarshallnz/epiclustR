@@ -211,7 +211,7 @@ Initialise <- function(region,weather="",setpriors=0) {
   # initialise
   if (params$incR) {
     source(file.path("Functions", "RFunctions.r"))
-    RInitialize()
+    state <- RInitialize()
   }
   if (params$incS) { source(file.path("Functions", "SFunctions.r")) }
   if (params$incU) {
@@ -234,6 +234,7 @@ Initialise <- function(region,weather="",setpriors=0) {
   if (params$incW) { WSetPriors(setpriors) }
   if (params$incX) { XSetPriors(setpriors) }
   if (params$incB) { BSetPriors(setpriors) }
+  return(state)
 }
 
 interpolate <- function(v) {
@@ -245,28 +246,29 @@ interpolate <- function(v) {
   }
 }
 
-Sample <- function(i) {
-  if (params$incR) { RSample() }
+Sample <- function(i, state) {
+  if (params$incR) { state <- RSample(state) }
   if (params$incS) { SSample() }
-  if (params$incU) { USample() }
+  if (params$incU) { state <- USample(state) }
   if (params$incV) { VSample() }
   if (params$incW) { WSample() }
   if (params$incX) { XSample(i) }
   if (params$incB) { BSample() }
-  cat(fe,"\n",file=file.path(params$outpath, "fixedEffects.txt"),append=TRUE)
-  cat(Deviance(),"\n",file=file.path(params$outpath, "deviance.txt"),append=TRUE)
-  cat(ExpectedCases(),"\n",file=file.path(params$outpath, "expectedCases.txt"),append=TRUE)
-  if (params$incX | params$incS) {cat(ExpectedCases(smoothed=TRUE),"\n",file=file.path(params$outpath, "smoothedCases.txt"),append=TRUE)}  
+  cat(state$fe,"\n",file=file.path(params$outpath, "fixedEffects.txt"),append=TRUE)
+  cat(Deviance(state),"\n",file=file.path(params$outpath, "deviance.txt"),append=TRUE)
+  cat(ExpectedCases(state),"\n",file=file.path(params$outpath, "expectedCases.txt"),append=TRUE)
+  if (params$incX | params$incS) {cat(ExpectedCases(state,smoothed=TRUE),"\n",file=file.path(params$outpath, "smoothedCases.txt"),append=TRUE)}
+  return(state)
 }
 
-Deviance <- function() {
-  sum(-2*log(dpois(cases[,],ECases())))-params$baseDeviance
+Deviance <- function(state) {
+  sum(-2*log(dpois(cases[,],ECases(state))))-params$baseDeviance
 }
 
 # expected cases per time and space
-ECases <- function(smoothed = FALSE) {
-  output<-rep(fe, params$tps*params$mbs)
-  if (params$incR) { output <- output + RRisk() }
+ECases <- function(state, smoothed = FALSE) {
+  output<-rep(state$fe, params$tps*params$mbs)
+  if (params$incR) { output <- output + RRisk(state) }
   if (params$incS && !smoothed) { output <- output + SRisk() }
   if (params$incU) { output <- output + URisk() }
   if (params$incV) { output <- output + VRisk() }
@@ -277,8 +279,8 @@ ECases <- function(smoothed = FALSE) {
 }
 
 # expected number of cases per time
-ExpectedCases <- function(smoothed = FALSE) {
-  apply(matrix(ECases(smoothed=smoothed),params$tps,params$mbs),1,sum)
+ExpectedCases <- function(state, smoothed = FALSE) {
+  apply(matrix(ECases(state,smoothed=smoothed),params$tps,params$mbs),1,sum)
 }
 
 # This *SEEMS* to be independent of model state etc.
@@ -319,7 +321,7 @@ plotPairs<-function(variable,components=1,posteriors=TRUE,zeroCentre=FALSE,halfC
   }
 }
 
-Convergence <- function()
+Convergence <- function(state)
 {
   try(dev.off(),TRUE)
   pdf(paper="a4r",width=11,height=7,file=file.path(params$outpath, "Convergence.pdf"))
@@ -348,8 +350,8 @@ Convergence <- function()
   dic_file <- file.path(params$outpath, "DIC.txt")
   file.remove(dic_file)
   cat("Posterior Mean Deviance: ",params$baseDeviance+pMeanDeviance,"\n",file=dic_file,sep="",append=TRUE)
-  cat("Effective Parameters:    ",pMeanDeviance-Deviance(),"\n",file=dic_file,sep="",append=TRUE)
-  cat("DIC:                     ",params$baseDeviance+2*pMeanDeviance-Deviance(),"\n",file=dic_file,sep="",append=TRUE)
+  cat("Effective Parameters:    ",pMeanDeviance-Deviance(state),"\n",file=dic_file,sep="",append=TRUE)
+  cat("DIC:                     ",params$baseDeviance+2*pMeanDeviance-Deviance(state),"\n",file=dic_file,sep="",append=TRUE)
 }
 
 Analysis <- function()

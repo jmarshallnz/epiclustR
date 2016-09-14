@@ -56,8 +56,8 @@ UUpdate <- function(i=0) {
   }
 }
 
-USample <- function() {
-  fe<<-fe+mean(U)
+USample <- function(state) {
+  state$fe <- state$fe + mean(U)
   U<<-U-mean(U) 
   cat(c(t(U),"\n"),file=file.path(params$outpath, "U.txt"),append=TRUE,sep=" ")
   cat(kU,file=file.path(params$outpath, "kU.txt"),append=TRUE,sep="\n")
@@ -65,6 +65,7 @@ USample <- function() {
   acceptU<<-rep(0,2)
   rejectU<<-rep(0,2)   
   cat(USumFunction(U),"\n",file=file.path(params$outpath, "sumU.txt"),append=TRUE)
+  return(state)
 }
 
 URisk <- function() {
