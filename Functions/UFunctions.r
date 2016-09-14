@@ -52,10 +52,11 @@ UUpdate <- function(i=0, state) {
       ap<-ULikelihood(j,U[j],proposal,state)
     } else {
       proposal<-rnorm(1,U[j],sd=sigmaU)
-      ap<-exp(-kU*sum((U[weight[j,2:(1+weight[j,1])]]-proposal)^2-(U[weight[j,2:(1+weight[j,1])]]-U[j])^2)/2)*ULikelihood(j,U[j],proposal,state)
+      prior_ratio <- -kU*sum((U[weight[j,2:(1+weight[j,1])]]-proposal)^2-(U[weight[j,2:(1+weight[j,1])]]-U[j])^2)/2
+      ap<-ULikelihood(j,U[j],proposal,state)+prior_ratio
     }
     un<-runif(1)
-    if (un<=ap) {
+    if (ap >= 0 || un<=exp(ap)) {
       U[j] <- proposal
       acceptU[1+i%%2] <- acceptU[1+i%%2]+1
     } else {
@@ -90,14 +91,14 @@ URisk <- function(state) {
 
 ULikelihoodU <- function(j,curr,prop,state) {
   fe <- state$fe
-  prod(dpois(cases[,j],n[j]*exp(fe+prop))/
-       dpois(cases[,j],n[j]*exp(fe+curr)))
+  sum(dpois(cases[,j],n[j]*exp(fe+prop), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+curr), log=TRUE))
 }
 ULikelihoodRUX <- function(j,curr,prop,state) {
   fe <- state$fe
   R  <- state$R
-  prod(dpois(cases[,j],n[j]*exp(fe+R+prop+betaX*X[,mbrg[j]]))/
-       dpois(cases[,j],n[j]*exp(fe+R+curr+betaX*X[,mbrg[j]])))
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+betaX*X[,mbrg[j]]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr+betaX*X[,mbrg[j]]), log=TRUE))
 }
 ULikelihoodRUX2 <- function(j,curr,prop,state) {
   fe <- state$fe
@@ -105,45 +106,45 @@ ULikelihoodRUX2 <- function(j,curr,prop,state) {
   X  <- state$X
   betaX <- state$betaX
   tps <- length(R)
-  prod(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]))/
-       dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]])))
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE))
 }
 ULikelihoodRUX3 <- function(j,curr,prop,state) {
   fe <- state$fe
   R  <- state$R
   tps <- length(R)
-  prod(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]))/
-       dpois(cases[1,j],n[j]*exp(fe+R[1]+curr+betaX[mbrg[j]]*X[1,mbrg[j]])),
-       dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])))/
-       dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]]))))
+  sum(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE)-
+      dpois(cases[1,j],n[j]*exp(fe+R[1]+curr+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE),
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])), log=TRUE)-
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])), log=TRUE))
 }
 ULikelihoodRUX4 <- function(j,curr,prop,state) {
   fe <- state$fe
   R  <- state$R
   tps <- length(R)
-  prod(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]))/
-       dpois(cases[1,j],n[j]*exp(fe+R[1]+U[j]+betaX[mbrg[j]]*X[1,mbrg[j]])),
-       dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])))/
-       dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]]))))
+  sum(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE)-
+      dpois(cases[1,j],n[j]*exp(fe+R[1]+U[j]+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE),
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])), log=TRUE)-
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])), log=TRUE))
 }
 ULikelihoodUX <- function(j,curr,prop,state) {
   fe <- state$fe
   # NOTE: This will fail, as logcases doesn't exist
-  prod(dpois(cases[,j],n[j]*exp(fe+prop+betaX*X[,mbrg[j]]*logcases[,j]))/
-       dpois(cases[,j],n[j]*exp(fe+curr+betaX*X[,mbrg[j]]*logcases[,j])))
+  sum(dpois(cases[,j],n[j]*exp(fe+prop+betaX*X[,mbrg[j]]*logcases[,j]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+curr+betaX*X[,mbrg[j]]*logcases[,j]), log=TRUE))
 }
 ULikelihoodRU <- function(j,curr,prop,state) {
   fe <- state$fe
   R  <- state$R
-  prod(dpois(cases[,j],n[j]*exp(fe+R+prop))/
-       dpois(cases[,j],n[j]*exp(fe+R+curr)))
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr), log=TRUE))
 }
 ULikelihoodRUW <- function(j,curr,prop,state) {
   tps <- params$tps
   fe <- state$fe
   tps <- length(R)
-  prod(dpois(cases[,j],n[j]*exp(fe+R+prop+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]))/
-       dpois(cases[,j],n[j]*exp(fe+R+curr+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]])))
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]), log=TRUE))
 }
 
 UConvergence <- function(state) {
