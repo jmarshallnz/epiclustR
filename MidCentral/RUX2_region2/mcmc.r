@@ -30,7 +30,7 @@ ULikelihood<-ULikelihoodRUX2
 XLikelihood<-XLikelihoodRUX2
 betaXLikelihood<-betaXLikelihoodRUX2
 
-cat("Algorithm starts",date(),"\n")
+t <- system.time(
 for (i in 1:params$iters) {
   state <- RUpdate(i, state)
 #  cat("done rupdate, running uupdate\n")
@@ -44,6 +44,6 @@ for (i in 1:params$iters) {
   }
   cat("iteration:", i, "\n")
 #  cat(file=outputfile, "iteration:", i, "\n")
-}
-cat("Algorithm ends", date(),"\n")
-Convergence(state)
+})
+print(t)
+#Convergence(state)
