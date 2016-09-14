@@ -168,9 +168,12 @@ RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
   U   <- state$U
   X   <- state$X
   betaX <- state$betaX
-  num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)), log=TRUE)
-  den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)), log=TRUE)
-  sum(num - den)
+  # lambda here is the current rate
+  lambda_curr <- rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1))
+  lambda_prop <- lambda_curr * rep(exp(prop-curr),mbs)
+# sum(dpois(cases[j:k,],lambda_prop, log=TRUE)-
+#     dpois(cases[j:k,],lambda_curr, log=TRUE))
+  sum(cases[j:k,] * rep(prop - curr,mbs) - lambda_prop + lambda_curr)
 }
 
 RLikelihoodRUX3 <- function(j,k,curr,prop) {
