@@ -280,8 +280,6 @@ XSample <- function(i) {
     cat((1-apply(1-X,2,prod))*betaX,"\n",file=file.path(params$outpath, "betaXconditional.txt"),append=TRUE)
   }
   cat(acceptX/(acceptX+rejectX),"\n",file=file.path(params$outpath, "acceptanceX.txt"),append=TRUE)
-  acceptX<<-0
-  rejectX<<-0
   if (XOutput) {
     cat(X,"\n",file=file.path(params$outpath, "X.txt"))
     cat(cumX,"\n",file=file.path(params$outpath, "cumulativeX.txt"))
@@ -290,6 +288,13 @@ XSample <- function(i) {
     cat(X,"\n",file=file.path(params$outpath, "fullX.txt"),append=TRUE)
   } 
 }
+
+XInitAcceptance <- function(state) {
+  acceptX<<-0
+  rejectX<<-0
+  return(state)
+}
+
 XConvergence <- function() {
   rgs <- ncol(X)
   pX<<-plotPairs("pX")

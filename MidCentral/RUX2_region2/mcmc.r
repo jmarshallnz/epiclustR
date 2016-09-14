@@ -33,16 +33,17 @@ betaXLikelihood<-betaXLikelihoodRUX2
 cat("Algorithm starts",date(),"\n")
 for (i in 1:params$iters) {
   state <- RUpdate(i, state)
-  R  <- state$R
-  kR <- state$kR
-  fe <- state$fe
 #  cat("done rupdate, running uupdate\n")
-  UUpdate(i)
+  state <- UUpdate(i, state)
+  R  <- state$R
+  fe <- state$fe
+  U  <- state$U
 #  cat("done uupdate, running xupdate\n")
   XUpdate(i)
 #  cat("done xupdate\n")
   if (i%%params$samplefreq==0) {
-    state <- Sample(i, state)
+    Sample(i, state)
+    state <- InitAcceptance(state)
   }
   cat("iteration:", i, "\n")
 #  cat(file=outputfile, "iteration:", i, "\n")

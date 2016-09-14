@@ -113,7 +113,9 @@ RUpdate <- function(i=0, state) {
     j<-k+1
   }
   state$kR <- kR
-  state$R  <- R
+  state$fe <- state$fe + mean(R)
+  state$R  <- R - mean(R)
+
 #  cat("Ending RUpdate, dim(R)=", dim(state$R), "\n")
   state$acceptR <- acceptR
   state$rejectR <- rejectR
@@ -163,6 +165,7 @@ RLikelihoodRUX <- function(j,k,curr,prop) {
 RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
   mbs <- ncol(n)
   fe  <- state$fe
+  U   <- state$U
   num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
   den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
   prod(num / den)
@@ -197,14 +200,15 @@ RLikelihoodBR <- function(j,k,curr,prop) {
 }
 
 RSample <- function(state) {
-  state$fe <- state$fe + mean(state$R)
-  state$R  <- state$R - mean(state$R)
   cat(c(t(state$R),"\n"),file=file.path(params$outpath, "R.txt"),append=TRUE,sep=" ")
   cat(state$kR,file=file.path(params$outpath, "kR.txt"),append=TRUE,sep="\n")
   cat(c(t(state$acceptR[]/(state$acceptR[]+state$rejectR[])),"\n"),file=file.path(params$outpath, "acceptanceR.txt"),append=TRUE,sep=" ")
-  state$acceptR[] <- rep(0,1+length(Rblock))
-  state$rejectR[] <- rep(0,1+length(Rblock))
   cat(RSumFunction(state$R),"\n",file=file.path(params$outpath, "sumR.txt"),append=TRUE)
+}
+
+RInitAcceptance <- function(state) {
+  state$acceptR <- matrix(0,1+length(Rblock),1)
+  state$rejectR <- matrix(0,1+length(Rblock),1)
   return(state)
 }
 

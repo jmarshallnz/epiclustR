@@ -209,14 +209,15 @@ Initialise <- function(region,weather="",setpriors=0) {
     file.remove(file.path(params$outpath, "expectedCases.txt"))
   }
   # initialise
+  state <- NULL
   if (params$incR) {
     source(file.path("Functions", "RFunctions.r"))
-    state <- RInitialize()
+    state <- c(state, RInitialize())
   }
   if (params$incS) { source(file.path("Functions", "SFunctions.r")) }
   if (params$incU) {
     source(file.path("Functions", "UFunctions.r"))
-    UInitialize()
+    state <- c(state, UInitialize())
   }
   if (params$incV) { source(file.path("Functions", "VFunctions.r")) }
   if (params$incX) {
@@ -247,9 +248,9 @@ interpolate <- function(v) {
 }
 
 Sample <- function(i, state) {
-  if (params$incR) { state <- RSample(state) }
+  if (params$incR) { RSample(state) }
   if (params$incS) { SSample() }
-  if (params$incU) { state <- USample(state) }
+  if (params$incU) { USample(state) }
   if (params$incV) { VSample() }
   if (params$incW) { WSample() }
   if (params$incX) { XSample(i) }
@@ -258,6 +259,16 @@ Sample <- function(i, state) {
   cat(Deviance(state),"\n",file=file.path(params$outpath, "deviance.txt"),append=TRUE)
   cat(ExpectedCases(state),"\n",file=file.path(params$outpath, "expectedCases.txt"),append=TRUE)
   if (params$incX | params$incS) {cat(ExpectedCases(state,smoothed=TRUE),"\n",file=file.path(params$outpath, "smoothedCases.txt"),append=TRUE)}
+}
+
+InitAcceptance <- function(state) {
+  if (params$incR) { state <- RInitAcceptance(state) }
+#  if (params$incS) { SSample() }
+  if (params$incU) { state <- UInitAcceptance(state) }
+#  if (params$incV) { state <- VInitAcceptance(state) }
+#  if (params$incW) { state <- WInitAcceptance(state) }
+  if (params$incX) { state <- XInitAcceptance(state) }
+#  if (params$incB) { state <- BInitAcceptance(state) }
   return(state)
 }
 
@@ -270,7 +281,7 @@ ECases <- function(state, smoothed = FALSE) {
   output<-rep(state$fe, params$tps*params$mbs)
   if (params$incR) { output <- output + RRisk(state) }
   if (params$incS && !smoothed) { output <- output + SRisk() }
-  if (params$incU) { output <- output + URisk() }
+  if (params$incU) { output <- output + URisk(state) }
   if (params$incV) { output <- output + VRisk() }
   if (params$incW) { output <- output + WRisk() }
   if (params$incX && !smoothed) { output<-output + XRisk() }
@@ -330,7 +341,7 @@ Convergence <- function(state)
   pMeanDeviance<-plotPairs("deviance",useDataCentre=T)
   if (params$incR) { RConvergence() }
   if (params$incS) { SConvergence() }
-  if (params$incU) { UConvergence() }
+  if (params$incU) { UConvergence(state) }
   if (params$incV) { VConvergence() }
   if (params$incW) { WConvergence() }
   if (params$incX) { XConvergence() }
