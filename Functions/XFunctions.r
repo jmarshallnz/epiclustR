@@ -113,9 +113,9 @@ XUpdate0 <- function(i=0, state) {
   state$pX <- rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X)) 
   # Update betaX
   proposal<-rnorm(1,betaX,sigmaX)
-  ap<-betaXLikelihood(betaX, proposal, state)
+  ap<-betaXLikelihood(betaX,proposal,state)
   un<-runif(1)
-  if (un<=ap && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
+  if ((ap >= 0 || un<=exp(ap)) && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
     betaX<-proposal
     acceptX<-acceptX+1
   } else {
@@ -151,7 +151,7 @@ XUpdate1 <- function(i=0, state) {
   proposal<-rnorm(1,betaX,sigmaX)
   ap<-betaXLikelihood(betaX,proposal,state)
   un<-runif(1)
-  if (un<=ap && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
+  if ((ap >= 0 || un<=exp(ap)) && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
     betaX<-proposal
     acceptX<-acceptX+1
   } else {
@@ -188,9 +188,10 @@ XUpdate2 <- function(i=0, state) {
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    ap<-betaXLikelihood(j,betaX[j],proposal,state)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
+    prior_ratio <- dgamma(proposal,abetaX,bbetaX,log=TRUE)-dgamma(betaX[j],abetaX,bbetaX,log=TRUE)
+    ap<-betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
     un<-runif(1)
-    if (un<=ap) {
+    if (ap >= 0 || un<=exp(ap)) {
       betaX[j]<-proposal
       acceptX<-acceptX+1
     } else {
@@ -230,9 +231,10 @@ XUpdate3 <- function(i=0, state) {
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    ap<-betaXLikelihood(j,betaX[j],proposal,state)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
+    prior_ratio <- dgamma(proposal,abetaX,bbetaX,log=TRUE)-dgamma(betaX[j],abetaX,bbetaX,log=TRUE)
+    ap<-betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
     un<-runif(1)
-    if (un<=ap) {
+    if (ap >= 0 || un<=exp(ap)) {
       betaX[j]<-proposal
       acceptX<-acceptX+1
     } else {
@@ -370,8 +372,8 @@ betaXLikelihoodRUX <- function(curr,prop,state) {
   R   <- state$R
   U   <- state$U
   X   <- state$X
-  prod(dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*prop))/
-       dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*curr)))
+  sum(dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*prop), log=TRUE)-
+      dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*curr), log=TRUE))
 }
 betaXLikelihoodRUX2 <- function(j,curr,prop,state) {
   mbs <- ncol(n)
@@ -380,8 +382,8 @@ betaXLikelihoodRUX2 <- function(j,curr,prop,state) {
   U   <- state$U
   X     <- state$X
   tps <- length(R)
-  prod(dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*prop))/
-       dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*curr)))
+  sum(dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*prop), log=TRUE) -
+      dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*curr), log=TRUE))
 }
 betaXLikelihoodRUX3 <- function(j,curr,prop,state) {
   tps <- length(R)
@@ -390,10 +392,10 @@ betaXLikelihoodRUX3 <- function(j,curr,prop,state) {
   R   <- state$R
   U   <- state$U
   X   <- state$X
-  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop))/
-       dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr)),
-       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop))/
-       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr)))
+  sum(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop), log=TRUE)-
+      dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr), log=TRUE),
+      dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop), log=TRUE)-
+      dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr), log=TRUE))
 }
 betaXLikelihoodRUX4 <- function(j,curr,prop,state) {
   tps <- length(R)
@@ -402,10 +404,10 @@ betaXLikelihoodRUX4 <- function(j,curr,prop,state) {
   R   <- state$R
   U   <- state$U
   X   <- state$X
-  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop))/
-       dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr)),
-       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop))/
-       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr)))
+  sum(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop), log=TRUE)-
+      dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr), log=TRUE),
+      dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop), log=TRUE)-
+      dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr), log=TRUE))
 }
 
 XSample <- function(state) {
