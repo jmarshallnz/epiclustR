@@ -35,14 +35,11 @@ for (i in 1:params$iters) {
   state <- RUpdate(i, state)
 #  cat("done rupdate, running uupdate\n")
   state <- UUpdate(i, state)
-  R  <- state$R
-  fe <- state$fe
-  U  <- state$U
 #  cat("done uupdate, running xupdate\n")
-  XUpdate(i)
+  state <- XUpdate(i, state)
 #  cat("done xupdate\n")
   if (i%%params$samplefreq==0) {
-    Sample(i, state)
+    Sample(state)
     state <- InitAcceptance(state)
   }
   cat("iteration:", i, "\n")

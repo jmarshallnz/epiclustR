@@ -166,6 +166,8 @@ RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
   mbs <- ncol(n)
   fe  <- state$fe
   U   <- state$U
+  X   <- state$X
+  betaX <- state$betaX
   num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
   den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
   prod(num / den)

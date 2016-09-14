@@ -222,7 +222,7 @@ Initialise <- function(region,weather="",setpriors=0) {
   if (params$incV) { source(file.path("Functions", "VFunctions.r")) }
   if (params$incX) {
     source(file.path("Functions", paste0("XFunctions", params$versioncode, ".r")))
-    XInitialise()
+    state <- c(state, XInitialise())
   }
   if (params$incB) {
     source(file.path("Functions", "BFunctions.r"))
@@ -247,13 +247,13 @@ interpolate <- function(v) {
   }
 }
 
-Sample <- function(i, state) {
+Sample <- function(state) {
   if (params$incR) { RSample(state) }
   if (params$incS) { SSample() }
   if (params$incU) { USample(state) }
   if (params$incV) { VSample() }
   if (params$incW) { WSample() }
-  if (params$incX) { XSample(i) }
+  if (params$incX) { XSample(state) }
   if (params$incB) { BSample() }
   cat(state$fe,"\n",file=file.path(params$outpath, "fixedEffects.txt"),append=TRUE)
   cat(Deviance(state),"\n",file=file.path(params$outpath, "deviance.txt"),append=TRUE)
@@ -284,7 +284,7 @@ ECases <- function(state, smoothed = FALSE) {
   if (params$incU) { output <- output + URisk(state) }
   if (params$incV) { output <- output + VRisk() }
   if (params$incW) { output <- output + WRisk() }
-  if (params$incX && !smoothed) { output<-output + XRisk() }
+  if (params$incX && !smoothed) { output<-output + XRisk(state) }
   if (params$incB) { output <- output + BRisk() }
   return(rep(n, each=params$tps)*exp(output))
 }
@@ -344,7 +344,7 @@ Convergence <- function(state)
   if (params$incU) { UConvergence(state) }
   if (params$incV) { VConvergence() }
   if (params$incW) { WConvergence() }
-  if (params$incX) { XConvergence() }
+  if (params$incX) { XConvergence(state) }
   if (params$incB) { BConvergence() }
   dev.off()
   #

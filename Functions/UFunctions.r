@@ -102,6 +102,8 @@ ULikelihoodRUX <- function(j,curr,prop,state) {
 ULikelihoodRUX2 <- function(j,curr,prop,state) {
   fe <- state$fe
   R  <- state$R
+  X  <- state$X
+  betaX <- state$betaX
   tps <- length(R)
   prod(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]))/
        dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]])))

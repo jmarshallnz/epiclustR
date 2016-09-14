@@ -13,7 +13,6 @@
 # Defaults
 XOutput<-TRUE
 XFullOutput<-FALSE
-pX<-0.1
 aX<-1
 bX<-51 # On average one outbreak per year per region
 
@@ -49,26 +48,29 @@ XInitialise <- function() {
     wch[[j]]<<-which(mbrg==j)
     lwch[j]<<-length(wch[[j]])
   }
-  X<<-matrix(rbinom(tps*rgs,1,pX),tps,rgs)  
-  cumX<<-matrix(0,tps,rgs)
+  pX <- 0.1
+  X <- matrix(rbinom(tps*rgs,1,pX),tps,rgs)  
+  cumX <- matrix(0,tps,rgs)
   if (Xmode==0) {
-    betaX<<-0.2
+    betaX <- 0.2
     sigmaX<<-0.2
     XUpdate<<-XUpdate0
+    XRisk<<-XRisk0
   } else if (Xmode==1) {
-    betaX<<-0.2
+    betaX <- 0.2
     sigmaX<<-0.2
     
+    XRisk<<-XRisk0
     XUpdate<<-XUpdate1
   } else if (Xmode==2) {
     if (params$tidyup) {file.remove(file.path(params$outpath, "betaXconditional.txt"))}
-    betaX<<-matrix(0.2,1,rgs)
+    betaX <- matrix(0.2,1,rgs)
     sigmaX<<-1
     XUpdate<<-XUpdate2
     XRisk<<-XRisk2
   } else if (Xmode==3 | Xmode==4) {
     if (params$tidyup) {file.remove(file.path(params$outpath, "betaXconditional.txt"))}
-    betaX<<-matrix(0.2,1,rgs)
+    betaX <- matrix(0.2,1,rgs)
     sigmaX<<-1
     abetaX<<-1
     bbetaX<<-1
@@ -77,8 +79,8 @@ XInitialise <- function() {
     if (Xmode==4) {XRisk<-XRisk4}
   }
 
-  acceptX<<-0
-  rejectX<<-0
+  acceptX <- 0
+  rejectX <- 0
   if (params$tidyup) {
     file.remove(file.path(params$outpath, "betaX.txt"))
     file.remove(file.path(params$outpath, "pX.txt"))
@@ -86,92 +88,171 @@ XInitialise <- function() {
     file.remove(file.path(params$outpath, "smoothedCases.txt"))
     file.remove(file.path(params$outpath, "fullX.txt"))
   }
+  state <- list(X = X,
+                pX = pX,
+                cumX = cumX,
+                betaX = betaX,
+                acceptX = acceptX,
+                rejectX = rejectX)
+  return(state)
 }
-XUpdate0 <- function(i=0) {
-  tps <- nrow(X)
-  rps <- ncol(X)
+
+XUpdate0 <- function(i=0, state) {
+  pX <- state$pX
+  betaX <- state$betaX
+  acceptX <- state$acceptX
+  rejectX <- state$rejectX
+
+  tps <- nrow(state$X)
+  rps <- ncol(state$X)
 
   # Update X
-  Xfcd<-XLikelihood(1)*pX/(XLikelihood(0)*(1-pX)+XLikelihood(1)*pX)
-  X<<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  Xfcd<-XLikelihood(1, state)*pX/(XLikelihood(0, state)*(1-pX)+XLikelihood(1, state)*pX)
+  state$X <- matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   #Update pX
-  pX<<-rbeta(1,aX+sum(X),bX+tps*rgs-sum(X)) 
+  state$pX <- rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X)) 
   # Update betaX
   proposal<-rnorm(1,betaX,sigmaX)
-  ap<-betaXLikelihood(proposal)
+  ap<-betaXLikelihood(betaX, proposal, state)
   un<-runif(1)
   if (un<=ap && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
-    betaX<<-proposal
-    acceptX<<-acceptX+1
+    betaX<-proposal
+    acceptX<-acceptX+1
   } else {
-    rejectX<<-rejectX+1
-  }   
+    rejectX<-rejectX+1
+  }
+  # TODO: Ideally we'd remove this. Problem is full X is large to save
+  #       in terms of the posterior, and if we want it right we have
+  #       to get rid of the burnin period.
+  #       I guess saving X to a binary file might be way more efficient
+  #       though? About 16 times smaller.
+  if (i>params$burnin) {
+    state$cumX<-state$cumX+X
+  }
+  state$betaX <- betaX
+  state$acceptX <- acceptX
+  state$rejectX <- rejectX
+  return(state)
 }
-XUpdate1 <- function(i=0) {
-  tps <- nrow(X)
-  rps <- ncol(X)
+
+XUpdate1 <- function(i=0, state) {
+  pX <- state$pX
+  betaX <- state$betaX
+  acceptX <- state$acceptX
+  rejectX <- state$rejectX
+
+  tps <- nrow(state$X)
+  rps <- ncol(state$X)
 
   # Update X
-  Xfcd<-XLikelihood(1)*pX/(XLikelihood(0)*(1-pX)+XLikelihood(1)*pX)
-  X<<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  Xfcd<-XLikelihood(1,state)*pX/(XLikelihood(0,state)*(1-pX)+XLikelihood(1,state)*pX)
+  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   # Update betaX
   proposal<-rnorm(1,betaX,sigmaX)
-  ap<-betaXLikelihood(proposal)
+  ap<-betaXLikelihood(betaX,proposal,state)
   un<-runif(1)
   if (un<=ap && proposal>0) {# This causes the prior for betaX to be the flat prior on the positive half-line.
-    betaX<<-proposal
-    acceptX<<-acceptX+1
+    betaX<-proposal
+    acceptX<-acceptX+1
   } else {
-    rejectX<<-rejectX+1
+    rejectX<-rejectX+1
   }   
+  # TODO: Ideally we'd remove this. Problem is full X is large to save
+  #       in terms of the posterior, and if we want it right we have
+  #       to get rid of the burnin period.
+  #       I guess saving X to a binary file might be way more efficient
+  #       though? About 16 times smaller.
+  if (i>params$burnin) {
+    state$cumX<-state$cumX+X
+  }
+  state$pX <- pX
+  state$betaX <- betaX
+  state$acceptX <- acceptX
+  state$rejectX <- rejectX
+  return(state)
 }
-XUpdate2 <- function(i=0) {
-  tps <- nrow(X)
-  rps <- ncol(X)
+XUpdate2 <- function(i=0, state) {
+  pX <- state$pX
+  betaX <- state$betaX
+  acceptX <- state$acceptX
+  rejectX <- state$rejectX
+
+  tps <- nrow(state$X)
+  rps <- ncol(state$X)
 
   # Update X
-  Xfcd<-XLikelihood(1)*pX/(XLikelihood(0)*(1-pX)+XLikelihood(1)*pX)
-  X<<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  Xfcd<-XLikelihood(1,state)*pX/(XLikelihood(0,state)*(1-pX)+XLikelihood(1,state)*pX)
+  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   #Update pX
-  pX<<-rbeta(1,aX+sum(X),bX+tps*rgs-sum(X)) 
+  state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    ap<-betaXLikelihood(proposal,j)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
+    ap<-betaXLikelihood(j,betaX[j],proposal,state)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
     un<-runif(1)
     if (un<=ap) {
-      betaX[j]<<-proposal
-      acceptX<<-acceptX+1
+      betaX[j]<-proposal
+      acceptX<-acceptX+1
     } else {
-      rejectX<<-rejectX+1
+      rejectX<-rejectX+1
     }
   }   
+  # TODO: Ideally we'd remove this. Problem is full X is large to save
+  #       in terms of the posterior, and if we want it right we have
+  #       to get rid of the burnin period.
+  #       I guess saving X to a binary file might be way more efficient
+  #       though? About 16 times smaller.
+  if (i>params$burnin) {
+    state$cumX<-state$cumX+state$X
+  }
+  state$betaX <- betaX
+  state$acceptX <- acceptX
+  state$rejectX <- rejectX
+  return(state)
 }
-XUpdate3 <- function(i=0) {
-  tps <- nrow(X)
-  rps <- ncol(X)
+XUpdate3 <- function(i=0, state) {
+  pX <- state$pX
+  betaX <- state$betaX
+  acceptX <- state$acceptX
+  rejectX <- state$rejectX
+
+  tps <- nrow(state$X)
+  rps <- ncol(state$X)
 
   # Update X
   for (j in 1:tps) {
-    X1<-XLikelihood(j,1)*pX
-    Xfcd<-X1/(XLikelihood(j,0)*(1-pX)+X1)
-    X[j,]<<-rbinom(rgs,1,Xfcd)
+    X1<-XLikelihood(j,1,state)*pX
+    Xfcd<-X1/(XLikelihood(j,0,state)*(1-pX)+X1)
+    X$state[j,]<-rbinom(rgs,1,Xfcd)
   }
   #Update pX
-  pX<<-rbeta(1,aX+sum(X),bX+tps*rgs-sum(X))
+  state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    ap<-betaXLikelihood(proposal,j)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
+    ap<-betaXLikelihood(j,betaX[j],proposal,state)*(dgamma(proposal,abetaX,bbetaX)/dgamma(betaX[j],abetaX,bbetaX))
     un<-runif(1)
     if (un<=ap) {
-      betaX[j]<<-proposal
-      acceptX<<-acceptX+1
+      betaX[j]<-proposal
+      acceptX<-acceptX+1
     } else {
-      rejectX<<-rejectX+1
+      rejectX<-rejectX+1
     }
   }   
+  # TODO: Ideally we'd remove this. Problem is full X is large to save
+  #       in terms of the posterior, and if we want it right we have
+  #       to get rid of the burnin period.
+  #       I guess saving X to a binary file might be way more efficient
+  #       though? About 16 times smaller.
+  if (i>params$burnin) {
+    state$cumX<-state$cumX+X
+  }
+  state$betaX <- betaX
+  state$acceptX <- acceptX
+  state$rejectX <- rejectX
+  return(state)
 }
+
 squashProd <- function(input) {# This may be faster when applied to a 3d ragged array tps*mbs*max(mb in a rg)
   tps <- params$tps # If X is already created, these are known?
   mbs <- params$mbs
@@ -200,26 +281,46 @@ squashProd3 <- function(input) {
   }
   return(output)
 }
-XRisk <- function() {
-  X[,mbrg]*betaX
+
+XRisk0 <- function(state) {
+  state$X[,mbrg]*state$betaX
 }
-XRisk2 <- function() {
-  X[,mbrg]*rep(betaX[mbrg],each=nrow(X))
+XRisk2 <- function(state) {
+  state$X[,mbrg]*rep(state$betaX[mbrg],each=nrow(state$X))
 }
-XRisk3 <- function() {
+XRisk3 <- function(state) {
+  X <- state$X
+  betaX <- state$betaX
   rbind(X[1,mbrg],X[1:(nrow(X)-1),mbrg]+X[2:nrow(X),mbrg])*rep(betaX[mbrg],each=nrow(X))
 }
-XRisk4 <- function() {
+XRisk4 <- function(state) {
+  X <- state$X
+  betaX <- state$betaX
   rbind(X[1,mbrg],pmax(X[1:(nrow(X)-1),mbrg],X[2:nrow(X),mbrg]))*rep(betaX[mbrg],each=nrow(X))
 }
-XLikelihoodRUX <- function(x) {
-  mbs <- params$mbs
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,mbs)+rep(U,each=nrow(X))+x*betaX)))
+XLikelihoodRUX <- function(x, state) {
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  betaX <- state$betaX
+  X     <- state$X
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+x*betaX)))
 }
-XLikelihoodRUX2 <- function(x) {
+XLikelihoodRUX2 <- function(x, state) {
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  betaX <- state$betaX
+  X     <- state$X
   squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+x*rep(betaX[mbrg],each=nrow(X)))))
 }
-XLikelihoodRUX3 <- function(j,x) {
+XLikelihoodRUX3 <- function(j,x,state) {
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  betaX <- state$betaX
+  X     <- state$X
+
   # TODO: Figure out what each case is doing
   if (j>1 && j<nrow(X)) {
     return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+x)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(x+X[j+1,mbrg])*betaX[mbrg]))))
@@ -229,7 +330,12 @@ XLikelihoodRUX3 <- function(j,x) {
     return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+x)*betaX[mbrg]))))
   }
 }
-XLikelihoodRUX4 <- function(j,x) {
+XLikelihoodRUX4 <- function(j,x,state) {
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  betaX <- state$betaX
+  X     <- state$X
   if (j>1 && j<nrow(X)) {
     return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],x)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(x,X[j+1,mbrg])*betaX[mbrg]))))
   } else if (j==1) {
@@ -238,65 +344,94 @@ XLikelihoodRUX4 <- function(j,x) {
     return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],x)*betaX[mbrg]))))
   }
 }
-XLikelihoodRX <- function(x) {
+XLikelihoodRX <- function(x,state) {
+  fe  <- state$fe
+  R   <- state$R
+  betaX <- state$betaX
   squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+x*betaX)))
 }
-XLikelihoodUX <- function(x) {
+XLikelihoodUX <- function(x,state) {
   tps <- params$tps
+  fe  <- state$fe
+  U   <- state$U
+  betaX <- state$betaX
   squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+x*betaX)))
 }
-XLikelihoodX <- function(x) {
+XLikelihoodX <- function(x,state) {
   tps <- params$tps
+  fe  <- state$fe
+  betaX <- state$betaX
   squashProd(dpois(cases,rep(n,each=tps)*exp(fe+x*betaX)))
 }
-betaXLikelihoodRUX <- function(proposal) {
+betaXLikelihoodRUX <- function(curr,prop,state) {
   tps <- length(R)
   mbs <- ncol(n)
-  prod(dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*proposal))/dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*betaX)))
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  X   <- state$X
+  prod(dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*prop))/
+       dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*curr)))
 }
-betaXLikelihoodRUX2 <- function(proposal,j) {
+betaXLikelihoodRUX2 <- function(j,curr,prop,state) {
+  mbs <- ncol(n)
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  X     <- state$X
+  tps <- length(R)
+  prod(dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*prop))/
+       dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*curr)))
+}
+betaXLikelihoodRUX3 <- function(j,curr,prop,state) {
   tps <- length(R)
   mbs <- ncol(n)
-  prod(dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*proposal))/dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*betaX[j])))
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  X   <- state$X
+  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop))/
+       dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr)),
+       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop))/
+       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr)))
 }
-betaXLikelihoodRUX3 <- function(proposal,j) {
+betaXLikelihoodRUX4 <- function(j,curr,prop,state) {
   tps <- length(R)
   mbs <- ncol(n)
-  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*proposal))/dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*betaX[j])),dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*proposal))/dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])]+X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*betaX[j])))
+  fe  <- state$fe
+  R   <- state$R
+  U   <- state$U
+  X   <- state$X
+  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*prop))/
+       dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*curr)),
+       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*prop))/
+       dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*curr)))
 }
-betaXLikelihoodRUX4 <- function(proposal,j) {
-  tps <- length(R)
-  mbs <- ncol(n)
-  prod(dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*proposal))/dpois(cases[1,wch[[j]]],n[wch[[j]]]*exp(fe+rep(R[1],lwch[j])+U[wch[[j]]]+X[1,j]*betaX[j])),dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*proposal))/dpois(cases[2:tps,wch[[j]]],rep(n[wch[[j]]],each=tps-1)*exp(fe+rep(R[2:tps],lwch[j])+rep(U[wch[[j]]],each=tps-1)+pmax(X[rep((j-1)*tps,each=tps-1)+rep(2:tps,lwch[j])],X[rep((j-1)*tps,each=tps-1)+rep(1:(tps-1),lwch[j])])*betaX[j])))
-}
-XSample <- function(i) {
-  # TODO: Remove this - it is completely ludicrous...
-  if (i>params$burnin) {
-    cumX<<-cumX+X
-  }
-  cat(pX,"\n",file=file.path(params$outpath, "pX.txt"),append=TRUE)
-  cat(betaX,"\n",file=file.path(params$outpath, "betaX.txt"),append=TRUE)
+
+XSample <- function(state) {
+  cat(state$pX,"\n",file=file.path(params$outpath, "pX.txt"),append=TRUE)
+  cat(state$betaX,"\n",file=file.path(params$outpath, "betaX.txt"),append=TRUE)
   if (params$Xmode>1) {
-    cat((1-apply(1-X,2,prod))*betaX,"\n",file=file.path(params$outpath, "betaXconditional.txt"),append=TRUE)
+    cat((1-apply(1-state$X,2,prod))*state$betaX,"\n",file=file.path(params$outpath, "betaXconditional.txt"),append=TRUE)
   }
-  cat(acceptX/(acceptX+rejectX),"\n",file=file.path(params$outpath, "acceptanceX.txt"),append=TRUE)
+  cat(state$acceptX/(state$acceptX+state$rejectX),"\n",file=file.path(params$outpath, "acceptanceX.txt"),append=TRUE)
   if (XOutput) {
-    cat(X,"\n",file=file.path(params$outpath, "X.txt"))
-    cat(cumX,"\n",file=file.path(params$outpath, "cumulativeX.txt"))
+    cat(state$X,"\n",file=file.path(params$outpath, "X.txt"))
+    cat(state$cumX,"\n",file=file.path(params$outpath, "cumulativeX.txt"))
   }
   if (XFullOutput) {
-    cat(X,"\n",file=file.path(params$outpath, "fullX.txt"),append=TRUE)
-  } 
+    cat(state$X,"\n",file=file.path(params$outpath, "fullX.txt"),append=TRUE)
+  }
 }
 
 XInitAcceptance <- function(state) {
-  acceptX<<-0
-  rejectX<<-0
+  state$acceptX<-0
+  state$rejectX<-0
   return(state)
 }
 
-XConvergence <- function() {
-  rgs <- ncol(X)
+XConvergence <- function(state) {
+  rgs <- ncol(state$X)
   pX<<-plotPairs("pX")
   if (params$Xmode>1) {
     betaX<<-plotPairs("betaX",rgs,use=T)
@@ -305,7 +440,7 @@ XConvergence <- function() {
     # trick for returning betaX to a vector
     betaX<<-sum(betaX)
   }
-  plotPairs("acceptanceX",length(acceptX),F,half=T)
+  plotPairs("acceptanceX",length(state$acceptX),F,half=T)
   if (params$Xmode>1) {
     try(input<-scan(file.path(params$outpath, "betaXconditional.txt")),T)
     input<-matrix(input,rgs,length(input)/rgs)
