@@ -180,10 +180,10 @@ XUpdate2 <- function(i=0, state) {
   tps <- nrow(state$X)
   rps <- ncol(state$X)
 
-  # Update X
-  Xfcd<-XLikelihood(1,state)*pX/(XLikelihood(0,state)*(1-pX)+XLikelihood(1,state)*pX)
-  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
-  #Update pX
+  # Update X, pX
+  X1 <- XLikelihood(1,state)*pX
+  X0 <- XLikelihood(0,state)*(1-pX)
+  state$X<-matrix(rbinom(tps*rgs,1,X1/(X0 + X1)),tps,rgs)
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
