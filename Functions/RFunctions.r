@@ -78,9 +78,9 @@ RUpdate <- function(i=0, state) {
       proposal<-rnorm(1,R[j],sd=sigmaR)
       ap<-RLikelihood(j,k,R[j:k],proposal,state)
       # full conditional component of ap
-      if (j>2) {ap<-ap*exp(-kR*((R[j-2]-2*R[j-1]+proposal)^2-(R[j-2]-2*R[j-1]+R[j])^2)/2)}
-      if (j>1 && j<lenR) {ap<-ap*exp(-kR*((R[j-1]-2*proposal+R[j+1])^2-(R[j-1]-2*R[j]+R[j+1])^2)/2)}
-      if (j<lenR-1) {ap<-ap*exp(-kR*((proposal-2*R[j+1]+R[j+2])^2-(R[j]-2*R[j+1]+R[j+2])^2)/2)}     
+      if (j>2) { ap <- ap - kR*((R[j-2]-2*R[j-1]+proposal)^2-(R[j-2]-2*R[j-1]+R[j])^2)/2 }
+      if (j>1 && j<lenR) { ap <- ap - kR*((R[j-1]-2*proposal+R[j+1])^2-(R[j-1]-2*R[j]+R[j+1])^2)/2 }
+      if (j<lenR-1) { ap <- ap - kR*((proposal-2*R[j+1]+R[j+2])^2-(R[j]-2*R[j+1]+R[j+2])^2)/2 }
     } else {
       # Conditional Prior Proposal step to update R
       if (j==1) {
@@ -104,7 +104,7 @@ RUpdate <- function(i=0, state) {
     }
     un<-runif(1)
 #    cat("ap=", ap, "un=", un, "\n")
-    if (un<=ap) {
+    if (ap >= 0 | un<=exp(ap)) {
       R[j:k]<-proposal
       acceptR[method]<-acceptR[method]+1
     } else {
@@ -128,38 +128,38 @@ RRisk <- function(state) {
 
 RLikelihoodR <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs))) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs))))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)), log=TRUE))
 }
 
 RLikelihoodRS <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop+S[j:k],mbs))) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr+S[j:k],mbs))))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop+S[j:k],mbs)), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr+S[j:k],mbs)), log=TRUE))
 }
 
 RLikelihoodRU <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1))) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1))))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)), log=TRUE))
 }
 
 RLikelihoodRUW <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]])) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]])))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]]), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+W[wthr[j:k+2,]]+W[ws+wthr[j:k+1,]]+W[2*ws+wthr[j:k,]]), log=TRUE))
 }
 
 RLikelihoodRX <- function(j,k,curr,propl) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+X[j:k,mbrg]*betaX)) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+X[j:k,mbrg]*betaX)))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+X[j:k,mbrg]*betaX), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+X[j:k,mbrg]*betaX), log=TRUE))
 }
 
 RLikelihoodRUX <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX)) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX)))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX), log=TRUE))
 }
 
 RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
@@ -168,37 +168,37 @@ RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
   U   <- state$U
   X   <- state$X
   betaX <- state$betaX
-  num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
-  den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)))
-  prod(num / den)
+  num <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)), log=TRUE)
+  den <- dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1)), log=TRUE)
+  sum(num - den)
 }
 
 RLikelihoodRUX3 <- function(j,k,curr,prop) {
   mbs <- ncol(n)
   if (j==1) { # only called if k==j
-    prod(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg])) /
-         dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg])))
+    sum(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg]), log=TRUE)-
+        dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg]), log=TRUE))
   } else {
-    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))) /
-         dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
+    sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)), log=TRUE)-
+        dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+(X[(j-1):(k-1),mbrg]+X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)), log=TRUE))
   }
 }
 
 RLikelihoodRUX4 <- function(j,k,curr,prop) {
   mbs <- ncol(n)
   if (j==1) { # only called if k==j
-    prod(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg])) /
-         dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg])))
+    sum(dpois(cases[1,],n*exp(fe+rep(prop,mbs)+U+X[1,mbrg]*betaX[mbrg]), log=TRUE)-
+        dpois(cases[1,],n*exp(fe+rep(curr,mbs)+U+X[1,mbrg]*betaX[mbrg]), log=TRUE))
   } else {
-    prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))) /
-         dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1))))
+    sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)), log=TRUE)-
+        dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+pmax(X[(j-1):(k-1),mbrg],X[j:k,mbrg])*rep(betaX[mbrg],each=k-j+1)), log=TRUE))
   }
 }
 
 RLikelihoodBR <- function(j,k,curr,prop) {
   mbs <- ncol(n)
-  prod(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(B[Blink],each=k-j+1))) /
-       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(B[Blink],each=k-j+1))))
+  sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(B[Blink],each=k-j+1)), log=TRUE)-
+      dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(B[Blink],each=k-j+1)), log=TRUE))
 }
 
 RSample <- function(state) {
