@@ -187,17 +187,21 @@ XUpdate2 <- function(i=0, state) {
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
-    proposal<-rnorm(1,betaX[j],sigmaX)
-    prior_ratio <- dgamma(proposal,abetaX,bbetaX,log=TRUE)-dgamma(betaX[j],abetaX,bbetaX,log=TRUE)
-    ap<-betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
-    un<-runif(1)
-    if (ap >= 0 || un<=exp(ap)) {
-      betaX[j]<-proposal
-      acceptX<-acceptX+1
+    proposal <- rnorm(1,betaX[j],sigmaX)
+    un<-runif(1) # always take the same number of random numbers...
+    if (proposal <= 0) {
+      rejectX <- rejectX + 1
     } else {
-      rejectX<-rejectX+1
+      prior_ratio <- (abetaX - 1) * (log(proposal) - log(betaX[j])) - (proposal - betaX[j])*bbetaX
+      ap <- betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
+      if (ap >= 0 || un<=exp(ap)) {
+        betaX[j]<-proposal
+        acceptX<-acceptX+1
+      } else {
+        rejectX<-rejectX+1
+      }
     }
-  }   
+  }
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have
   #       to get rid of the burnin period.
@@ -231,16 +235,20 @@ XUpdate3 <- function(i=0, state) {
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    prior_ratio <- dgamma(proposal,abetaX,bbetaX,log=TRUE)-dgamma(betaX[j],abetaX,bbetaX,log=TRUE)
-    ap<-betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
-    un<-runif(1)
-    if (ap >= 0 || un<=exp(ap)) {
-      betaX[j]<-proposal
-      acceptX<-acceptX+1
+    un<-runif(1) # always take the same number of random numbers...
+    if (proposal < 0) {
+      rejectX <- rejectX + 1
     } else {
-      rejectX<-rejectX+1
+      prior_ratio <- (abetaX - 1) * (log(proposal) - log(betaX[j])) - (proposal - betaX[j])*bbetaX
+      ap <- betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
+      if (ap >= 0 || un<=exp(ap)) {
+        betaX[j]<-proposal
+        acceptX<-acceptX+1
+      } else {
+        rejectX<-rejectX+1
+      }
     }
-  }   
+  }
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have
   #       to get rid of the burnin period.
