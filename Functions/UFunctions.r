@@ -20,7 +20,7 @@ USumFunction <- function(U) {
   for (i in seq_along(U)) {
     s <- s + sum((U[i]-U[weight[i,2:(1+weight[i,1])]])^2)
   }
-  s/2 # TODO: Why the divide by two here? Shouldn't that be done in the rate in the Gamma fnc?
+  s/2 # We divide by 2 here as the above sum will count all squared distances twice.
 }
 
 USetPriors <- function(setpriors) {
