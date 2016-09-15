@@ -388,10 +388,13 @@ betaXLikelihoodRUX2 <- function(j,curr,prop,state) {
   fe  <- state$fe
   R   <- state$R
   U   <- state$U
-  X     <- state$X
   tps <- length(R)
-  sum(dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*prop), log=TRUE) -
-      dpois(cases[,wch[[j]]],rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]*curr), log=TRUE))
+  X   <- state$X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]
+  lambda_curr <- rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+X*curr)
+  lambda_prop <- lambda_curr * exp(X*(prop-curr))
+#  sum(dpois(cases[,wch[[j]]],lambda_prop, log=TRUE) -
+#      dpois(cases[,wch[[j]]],lambda_curr, log=TRUE))
+  sum(cases[,wch[[j]]] * X * (prop - curr) - lambda_prop + lambda_curr)
 }
 betaXLikelihoodRUX3 <- function(j,curr,prop,state) {
   tps <- length(R)

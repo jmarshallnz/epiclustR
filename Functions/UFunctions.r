@@ -106,8 +106,11 @@ ULikelihoodRUX2 <- function(j,curr,prop,state) {
   X  <- state$X
   betaX <- state$betaX
   tps <- length(R)
-  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE)-
-      dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE))
+  lambda_curr <- n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]])
+  lambda_prop <- lambda_curr * exp(prop-curr)
+#  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE)-
+#      dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE))
+  sum(cases[,j] * (prop - curr) - lambda_prop + lambda_curr)
 }
 ULikelihoodRUX3 <- function(j,curr,prop,state) {
   fe <- state$fe
