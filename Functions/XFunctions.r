@@ -181,9 +181,9 @@ XUpdate2 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X, pX
-  X1 <- XLikelihood(1,state)*pX
-  X0 <- XLikelihood(0,state)*(1-pX)
-  state$X<-matrix(rbinom(tps*rgs,1,X1/(X0 + X1)),tps,rgs)
+  Xr <- XLikelihood(0,state) / XLikelihood(1, state)
+  Xfcd <- pX / (Xr*(1-pX) + pX)
+  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
