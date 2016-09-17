@@ -275,23 +275,23 @@ squashProd <- function(input) {# This may be faster when applied to a 3d ragged 
   {
     if (length(wch[[k]]) > 1)
     {
-      output[,k]<-apply(input[,wch[[k]]],1,prod)
+      output[,k]<-apply(input[,wch[[k]]],1,sum)
     }
     else
     {
       output[,k]<-input[,wch[[k]]]
     }
   }
-  return(output)
+  return(exp(output))
 }
 
 squashProd3 <- function(input) {
 
   output<-matrix(0,1,rgs)
   for (k in 1:rgs) {
-    output[k]<-prod(input[wch[[k]]])
+    output[k]<-sum(input[wch[[k]]])
   }
-  return(output)
+  return(exp(output))
 }
 
 XRisk0 <- function(state) {
@@ -316,8 +316,8 @@ XLikelihoodRUX <- function(state) {
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*betaX))/
-             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*betaX)))
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*betaX), log=TRUE)-
+             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*betaX), log=TRUE))
 }
 XLikelihoodRUX2 <- function(state) {
   fe  <- state$fe
@@ -325,8 +325,8 @@ XLikelihoodRUX2 <- function(state) {
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))))/
-             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X)))))
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))), log=TRUE)-
+             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X))), log=TRUE))
 }
 
 XLikelihoodRUX3 <- function(j,state) {
@@ -338,14 +338,18 @@ XLikelihoodRUX3 <- function(j,state) {
 
   # TODO: Figure out what each case is doing
   if (j>1 && j<nrow(X)) {
-    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+0)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(0+X[j+1,mbrg])*betaX[mbrg]))/
-                       dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+1)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(1+X[j+1,mbrg])*betaX[mbrg]))))
+    return(squashProd3((dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+0)*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(0+X[j+1,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+1)*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(1+X[j+1,mbrg])*betaX[mbrg]), log=TRUE))))
   } else if (j==1) {
-    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+(0+X[2,mbrg])*betaX[mbrg]))/
-                       dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+(1+X[2,mbrg])*betaX[mbrg]))))
+    return(squashProd3((dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[2,],n*exp(fe+R[2]+U+(0+X[2,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[2,],n*exp(fe+R[2]+U+(1+X[2,mbrg])*betaX[mbrg]), log=TRUE))))
   } else { # if j == nrow(X)
-    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+0)*betaX[mbrg]))/
-                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+1)*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+0)*betaX[mbrg]), log=TRUE)-
+                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+1)*betaX[mbrg]), log=TRUE)))
   }
 }
 XLikelihoodRUX4 <- function(j,state) {
@@ -355,37 +359,41 @@ XLikelihoodRUX4 <- function(j,state) {
   betaX <- state$betaX
   X     <- state$X
   if (j>1 && j<nrow(X)) {
-    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],0)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(0,X[j+1,mbrg])*betaX[mbrg]))/
-                       dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],1)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(1,X[j+1,mbrg])*betaX[mbrg]))))
+    return(squashProd3((dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],0)*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(0,X[j+1,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],1)*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(1,X[j+1,mbrg])*betaX[mbrg]), log=TRUE))))
   } else if (j==1) {
-    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+pmax(0,X[2,mbrg])*betaX[mbrg]))/
-                       dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+pmax(1,X[2,mbrg])*betaX[mbrg]))))
+    return(squashProd3((dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[2,],n*exp(fe+R[2]+U+pmax(0,X[2,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[2,],n*exp(fe+R[2]+U+pmax(1,X[2,mbrg])*betaX[mbrg]), log=TRUE))))
   } else { # if j == nrow(X)
-    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],0)*betaX[mbrg]))/
-                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],1)*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],0)*betaX[mbrg]), log=TRUE)-
+                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],1)*betaX[mbrg]), log=TRUE)))
   }
 }
 XLikelihoodRX <- function(state) {
   fe  <- state$fe
   R   <- state$R
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+0*betaX))/
-             dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+1*betaX)))
+  squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+0*betaX), log=TRUE)-
+             dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+1*betaX), log=TRUE))
 }
 XLikelihoodUX <- function(state) {
   tps <- params$tps
   fe  <- state$fe
   U   <- state$U
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+0*betaX))/
-             dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+1*betaX)))
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+0*betaX), log=TRUE)-
+             dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+1*betaX), log=TRUE))
 }
 XLikelihoodX <- function(state) {
   tps <- params$tps
   fe  <- state$fe
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+0*betaX))/
-             dpois(cases,rep(n,each=tps)*exp(fe+1*betaX)))
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+0*betaX), log=TRUE)-
+             dpois(cases,rep(n,each=tps)*exp(fe+1*betaX), log=TRUE))
 }
 betaXLikelihoodRUX <- function(curr,prop,state) {
   tps <- length(R)
