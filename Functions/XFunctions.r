@@ -384,16 +384,6 @@ betaXLikelihoodRUX <- function(curr,prop,state) {
       dpois(cases,rep(n,each=tps)*exp(fe+rep(R,mbs)+rep(U,each=tps)+X[rep(mbrg-1,each=tps)*tps+rep(1:tps,mbs)]*curr), log=TRUE))
 }
 
-betax_likelihood_rux2 <- function(cases, n, fe, R, U, X, rgmb_j, curr, prop, j) {
-  tps <- length(R)
-  Xj <- X[rep(j-1,each=tps)*tps+rep(1:tps,length(rgmb_j))]
-  lambda_curr <- rep(n[rgmb_j],each=tps)*exp(fe+rep(R,length(rgmb_j))+rep(U[rgmb_j],each=tps)+Xj*curr)
-  lambda_prop <- lambda_curr * exp(Xj*(prop-curr))
-  #  sum(dpois(cases[,wch[[j]]],lambda_prop, log=TRUE) -
-  #      dpois(cases[,wch[[j]]],lambda_curr, log=TRUE))
-  sum(cases[,rgmb_j] * Xj * (prop - curr) - lambda_prop + lambda_curr)
-}
-
 betaXLikelihoodRUX2 <- function(j,curr,prop,state) {
   betax_likelihood_rux2(cases, n, state$fe, state$R, state$U, state$X, wch[[j]],
                         curr, prop, j)

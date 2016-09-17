@@ -55,3 +55,32 @@ double u_likelihood_rux2(NumericMatrix cases,
 //  lambda_prop <- lambda_curr * exp(prop-curr)
 //  sum(cases[,j] * (prop - curr) - lambda_prop + lambda_curr)
 }
+
+// [[Rcpp::export]]
+double betax_likelihood_rux2(NumericMatrix cases,
+                             NumericVector n,
+                             double fe,
+                             NumericVector R,
+                             NumericVector U,
+                             NumericMatrix X,
+                             NumericVector rgmb_j,
+                             double curr,
+                             double prop,
+                             int j) {
+  const int n_t = R.length();
+  const int n_r = rgmb_j.length();
+  double lr = 0;
+  for (int t = 0; t < n_t; t++) {
+    for (int r = 0; r < n_r; r++) {
+      int u = rgmb_j[r]-1;
+      double loglambda = fe + R[t] + U[u];
+      lr += cases(t,u) * X(t,j-1) * (prop - curr)
+        - n[u] * (exp(loglambda + X(t,j-1)*prop) - exp(loglambda + X(t,j-1)*curr));
+    }
+  }
+  return lr;
+  // Xj <- X[rep(j-1,each=tps)*tps+rep(1:tps,lwch[j])]
+  // lambda_curr <- rep(n[wch[[j]]],each=tps)*exp(fe+rep(R,lwch[j])+rep(U[wch[[j]]],each=tps)+Xj*curr)
+  // lambda_prop <- lambda_curr * exp(Xj*(prop-curr))
+  // sum(cases[,wch[[j]]] * X * (prop - curr) - lambda_prop + lambda_curr)
+}
