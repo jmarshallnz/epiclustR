@@ -325,8 +325,12 @@ XLikelihoodRUX2 <- function(state) {
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))), log=TRUE)-
-             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X))), log=TRUE))
+
+  #squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))), log=TRUE)-
+  #           dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X))), log=TRUE))
+  lambda0 <- rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X)))
+  lambda1 <- lambda0 * exp(rep(betaX[mbrg],each=nrow(X)))
+  squashProd(cases * (0 - rep(betaX[mbrg],each=nrow(X))) - lambda0 + lambda1)
 }
 
 XLikelihoodRUX3 <- function(j,state) {
