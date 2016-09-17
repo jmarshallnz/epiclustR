@@ -107,7 +107,8 @@ XUpdate0 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X
-  Xfcd<-XLikelihood(1, state)*pX/(XLikelihood(0, state)*(1-pX)+XLikelihood(1, state)*pX)
+  Xr <- XLikelihood(state)
+  Xfcd <- pX / (Xr*(1-pX) + pX)
   state$X <- matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   #Update pX
   state$pX <- rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X)) 
@@ -145,7 +146,8 @@ XUpdate1 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X
-  Xfcd<-XLikelihood(1,state)*pX/(XLikelihood(0,state)*(1-pX)+XLikelihood(1,state)*pX)
+  Xr <- XLikelihood(state)
+  Xfcd <- pX / (Xr*(1-pX) + pX)
   state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   # Update betaX
   proposal<-rnorm(1,betaX,sigmaX)
@@ -181,7 +183,7 @@ XUpdate2 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X, pX
-  Xr <- XLikelihood(0,state) / XLikelihood(1, state)
+  Xr <- XLikelihood(state)
   Xfcd <- pX / (Xr*(1-pX) + pX)
   state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
@@ -226,8 +228,8 @@ XUpdate3 <- function(i=0, state) {
 
   # Update X
   for (j in 1:tps) {
-    X1<-XLikelihood(j,1,state)*pX
-    Xfcd<-X1/(XLikelihood(j,0,state)*(1-pX)+X1)
+    Xr <- XLikelihood(j,state)
+    Xfcd <- pX / (Xr*(1-pX) + pX)
     X$state[j,]<-rbinom(rgs,1,Xfcd)
   }
   #Update pX
@@ -308,23 +310,26 @@ XRisk4 <- function(state) {
   betaX <- state$betaX
   rbind(X[1,mbrg],pmax(X[1:(nrow(X)-1),mbrg],X[2:nrow(X),mbrg]))*rep(betaX[mbrg],each=nrow(X))
 }
-XLikelihoodRUX <- function(x, state) {
+XLikelihoodRUX <- function(state) {
   fe  <- state$fe
   R   <- state$R
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+x*betaX)))
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*betaX)))/
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*betaX)))
 }
-XLikelihoodRUX2 <- function(x, state) {
+XLikelihoodRUX2 <- function(state) {
   fe  <- state$fe
   R   <- state$R
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
-  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+x*rep(betaX[mbrg],each=nrow(X)))))
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X)))))/
+  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X)))))
 }
-XLikelihoodRUX3 <- function(j,x,state) {
+
+XLikelihoodRUX3 <- function(j,state) {
   fe  <- state$fe
   R   <- state$R
   U   <- state$U
@@ -333,45 +338,54 @@ XLikelihoodRUX3 <- function(j,x,state) {
 
   # TODO: Figure out what each case is doing
   if (j>1 && j<nrow(X)) {
-    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+x)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(x+X[j+1,mbrg])*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+0)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(0+X[j+1,mbrg])*betaX[mbrg])))/
+           squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+1)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(1+X[j+1,mbrg])*betaX[mbrg]))))
   } else if (j==1) {
-    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+x*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+(x+X[2,mbrg])*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+(0+X[2,mbrg])*betaX[mbrg])))/
+           squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+(1+X[2,mbrg])*betaX[mbrg]))))
   } else { # if j == nrow(X)
-    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+x)*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+0)*betaX[mbrg])))/
+           squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+1)*betaX[mbrg]))))
   }
 }
-XLikelihoodRUX4 <- function(j,x,state) {
+XLikelihoodRUX4 <- function(j,state) {
   fe  <- state$fe
   R   <- state$R
   U   <- state$U
   betaX <- state$betaX
   X     <- state$X
   if (j>1 && j<nrow(X)) {
-    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],x)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(x,X[j+1,mbrg])*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],0)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(0,X[j+1,mbrg])*betaX[mbrg])))/
+           squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],1)*betaX[mbrg]))*dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(1,X[j+1,mbrg])*betaX[mbrg]))))
   } else if (j==1) {
-    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+x*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+pmax(x,X[2,mbrg])*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+pmax(0,X[2,mbrg])*betaX[mbrg])))/
+           squashProd3(dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]))*dpois(cases[2,],n*exp(fe+R[2]+U+pmax(1,X[2,mbrg])*betaX[mbrg]))))
   } else { # if j == nrow(X)
-    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],x)*betaX[mbrg]))))
+    return(squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],0)*betaX[mbrg])))/
+           squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],1)*betaX[mbrg]))))
   }
 }
-XLikelihoodRX <- function(x,state) {
+XLikelihoodRX <- function(state) {
   fe  <- state$fe
   R   <- state$R
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+x*betaX)))
+  squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+0*betaX)))/
+  squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+1*betaX)))
 }
-XLikelihoodUX <- function(x,state) {
+XLikelihoodUX <- function(state) {
   tps <- params$tps
   fe  <- state$fe
   U   <- state$U
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+x*betaX)))
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+0*betaX)))/
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+1*betaX)))
 }
-XLikelihoodX <- function(x,state) {
+XLikelihoodX <- function(state) {
   tps <- params$tps
   fe  <- state$fe
   betaX <- state$betaX
-  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+x*betaX)))
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+0*betaX)))/
+  squashProd(dpois(cases,rep(n,each=tps)*exp(fe+1*betaX)))
 }
 betaXLikelihoodRUX <- function(curr,prop,state) {
   tps <- length(R)
