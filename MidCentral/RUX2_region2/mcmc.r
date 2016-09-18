@@ -47,3 +47,16 @@ for (i in 1:params$iters) {
 })
 print(t)
 #Convergence(state)
+
+compare_var <- function(variable) {
+  ref <- scan(file.path('MidCentral/RUX2_region2', paste0(variable, '.txt')))
+  new <- scan(file.path('MidCentral/current_version', paste0(variable, '.txt')))
+  print(all.equal(ref, new))
+}
+
+# compare versions
+compare_var('fixedEffects')
+compare_var('R')
+compare_var('U')
+compare_var('betaX')
+compare_var('cumulativeX')
