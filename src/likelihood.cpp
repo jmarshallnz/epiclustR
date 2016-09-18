@@ -92,6 +92,7 @@ Rcpp::NumericMatrix x_likelihood_rux2(NumericMatrix cases,
                                       NumericVector R,
                                       NumericVector U,
                                       NumericVector betaX,
+                                      double pX,
                                       List rgmb) {
   const int n_t = R.length();
   const int n_r = rgmb.length();
@@ -106,7 +107,7 @@ Rcpp::NumericMatrix x_likelihood_rux2(NumericMatrix cases,
         double loglambda1 = loglambda0 + betaX[r];
         loglr += n[u] * (exp(loglambda1) - exp(loglambda0)) - cases(t,u) * betaX[r];
       }
-      lr(t,r) = exp(loglr);
+      lr(t,r) = pX / (exp(loglr) * (1-pX) + pX);
     }
   }
   return lr;
