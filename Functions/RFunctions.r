@@ -3,6 +3,9 @@ library(MASS)
 sigmaR<-1
 Rblock<-c(4,5,9,11)
 
+# load in likelihood
+Rcpp::sourceCpp('src/likelihood.cpp')
+
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
   lenR <- length(R)
@@ -160,13 +163,6 @@ RLikelihoodRUX <- function(j,k,curr,prop) {
   mbs <- ncol(n)
   sum(dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(prop,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX), log=TRUE)-
       dpois(cases[j:k,],rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*betaX), log=TRUE))
-}
-
-r_likelihood_rux2 <- function(cases, n, fe, U, X, mbrg, betaX, curr, prop, j, k) {
-  mbs <- ncol(n)
-  lambda_curr <- rep(n,each=k-j+1)*exp(fe+rep(curr,mbs)+rep(U,each=k-j+1)+X[j:k,mbrg]*rep(betaX[mbrg],each=k-j+1))
-  lambda_prop <- lambda_curr * rep(exp(prop-curr),mbs)
-  sum(cases[j:k,] * rep(prop - curr,mbs) - lambda_prop + lambda_curr)
 }
 
 RLikelihoodRUX2 <- function(j,k,curr,prop,state) {
