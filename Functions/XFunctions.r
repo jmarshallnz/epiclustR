@@ -16,6 +16,8 @@ XFullOutput<-FALSE
 aX<-1
 bX<-51 # On average one outbreak per year per region
 
+Rcpp::sourceCpp('src/update_x.cpp')
+
 XSetPriors <- function(setpriors) {
   if (setpriors==0 | setpriors==1) {
     aX<<-1
