@@ -1,6 +1,8 @@
 # Defaults
 sigmaU<-1
 
+Rcpp::sourceCpp('src/update_u.cpp')
+
 UInitialize <- function() {
   if (params$tidyup) {file.remove(file.path(params$outpath, "U.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "kU.txt"))}
@@ -37,39 +39,8 @@ USetPriors <- function(setpriors) {
 }
 
 UUpdate <- function(i=0, state) {
-  # save current state
-  U <- state$U
-  kU <- state$kU
-  acceptU <- state$acceptU
-  rejectU <- state$rejectU
-
-  lenU <- length(U)
-  # Gibb's step to update kU
-  kU<-rgamma(1,aU+(lenU-1)/2,rate=(bU+USumFunction(U)/2))
-  for (j in 1:lenU) {
-    if (i%%2==0) {
-      proposal<-rnorm(1,mean(U[weight[j,2:(1+weight[j,1])]]),(1/kU/weight[j,1])^(0.5))
-      ap<-ULikelihood(j,U[j],proposal,state)
-    } else {
-      proposal<-rnorm(1,U[j],sd=sigmaU)
-      prior_ratio <- -kU*sum((U[weight[j,2:(1+weight[j,1])]]-proposal)^2-(U[weight[j,2:(1+weight[j,1])]]-U[j])^2)/2
-      ap<-ULikelihood(j,U[j],proposal,state)+prior_ratio
-    }
-    un<-runif(1)
-    if (ap >= 0 || un<=exp(ap)) {
-      U[j] <- proposal
-      acceptU[1+i%%2] <- acceptU[1+i%%2]+1
-    } else {
-      rejectU[1+i%%2] <- rejectU[1+i%%2]+1
-    }
-  }
-  state$kU <- kU
-  state$fe <- state$fe + mean(U)
-  state$U  <- U - mean(U)
-
-  state$acceptU <- acceptU
-  state$rejectU <- rejectU
-  return(state)
+  # call straight into c++ land
+  update_u(cases, n, mbrg, weight, i, state, prior=list(aU=aU, bU=bU, sigmaU=sigmaU))
 }
 
 USample <- function(state) {
