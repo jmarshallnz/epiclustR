@@ -66,8 +66,8 @@ double betax_likelihood(NumericMatrix cases,
     for (int r = 0; r < n_r; r++) {
       int u = rgmb_j[r]-1;
       double loglambda = fe + R[t] + U[u];
-      lr += cases(t,u) * X(t,j-1) * (prop - curr)
-        - n[u] * (exp(loglambda + X(t,j-1)*prop) - exp(loglambda + X(t,j-1)*curr));
+      lr += cases(t,u) * X(t,j) * (prop - curr)
+        - n[u] * (exp(loglambda + X(t,j)*prop) - exp(loglambda + X(t,j)*curr));
     }
   }
   return lr;
@@ -116,7 +116,7 @@ Rcpp::List update_x(NumericMatrix cases,
        rejectX++;
     } else {
       double prior_ratio = (abetaX - 1) * (log(proposal) - log(betaX[r])) - (proposal - betaX[r])*bbetaX;
-      double ap = betax_likelihood(cases, n, fe, R, U, X, rgmb[r], betaX[r], proposal, r+1) + prior_ratio;
+      double ap = betax_likelihood(cases, n, fe, R, U, X, rgmb[r], betaX[r], proposal, r) + prior_ratio;
       if (ap >= 0 || un <= exp(ap)) {
         betaX[r] = proposal;
         acceptX++;
