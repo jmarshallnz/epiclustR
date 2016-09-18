@@ -172,34 +172,10 @@ XUpdate1 <- function(i=0, state) {
   return(state)
 }
 XUpdate2 <- function(i=0, state) {
-  pX <- state$pX
-  betaX <- state$betaX
-  acceptX <- state$acceptX
-  rejectX <- state$rejectX
 
-  tps <- nrow(state$X)
-  rps <- ncol(state$X)
+  # Call straight into c-land
+  state <- update_x(cases, n, wch, state, list(aX=aX, bX=bX, sigmaX=sigmaX, abetaX=abetaX, bbetaX=bbetaX))
 
-  # Update X, pX
-  state$X <- XLikelihood(state)
-  state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
-  # Update betaX
-  for (j in 1:rgs) {
-    proposal <- rnorm(1,betaX[j],sigmaX)
-    un<-runif(1) # always take the same number of random numbers...
-    if (proposal <= 0) {
-      rejectX <- rejectX + 1
-    } else {
-      prior_ratio <- (abetaX - 1) * (log(proposal) - log(betaX[j])) - (proposal - betaX[j])*bbetaX
-      ap <- betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
-      if (ap >= 0 || un<=exp(ap)) {
-        betaX[j]<-proposal
-        acceptX<-acceptX+1
-      } else {
-        rejectX<-rejectX+1
-      }
-    }
-  }
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have
   #       to get rid of the burnin period.
@@ -208,11 +184,9 @@ XUpdate2 <- function(i=0, state) {
   if (i>params$burnin) {
     state$cumX<-state$cumX+state$X
   }
-  state$betaX <- betaX
-  state$acceptX <- acceptX
-  state$rejectX <- rejectX
   return(state)
 }
+
 XUpdate3 <- function(i=0, state) {
   pX <- state$pX
   betaX <- state$betaX
