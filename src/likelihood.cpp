@@ -84,3 +84,34 @@ double betax_likelihood_rux2(NumericMatrix cases,
   // lambda_prop <- lambda_curr * exp(Xj*(prop-curr))
   // sum(cases[,wch[[j]]] * X * (prop - curr) - lambda_prop + lambda_curr)
 }
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix x_likelihood_rux2(NumericMatrix cases,
+                                      NumericVector n,
+                                      double fe,
+                                      NumericVector R,
+                                      NumericVector U,
+                                      NumericVector betaX,
+                                      List rgmb) {
+  const int n_t = R.length();
+  const int n_r = rgmb.length();
+  NumericMatrix lr(n_t, n_r);
+  for (int t = 0; t < n_t; t++) {
+    for (int r = 0; r < n_r; r++) {
+      double loglr = 0;
+      NumericVector rgmb_r = rgmb[r];
+      for (int j = 0; j < rgmb_r.length(); j++) {
+        int u = rgmb_r[j]-1;
+        double loglambda0 = fe + R[t] + U[u];
+        double loglambda1 = loglambda0 + betaX[r];
+        loglr += n[u] * (exp(loglambda1) - exp(loglambda0)) - cases(t,u) * betaX[r];
+      }
+      lr(t,r) = exp(loglr);
+    }
+  }
+  return lr;
+//  lenR <- length(R)
+//  lambda0 <- rep(n,each=lenR)*exp(fe+rep(R,ncol(n))+rep(U,each=lenR))
+//  lambda1 <- lambda0 * exp(rep(betaX[mbrg],each=lenR))
+//  squashProd(cases * (0 - rep(betaX[mbrg],each=lenR)) - lambda0 + lambda1)
+}

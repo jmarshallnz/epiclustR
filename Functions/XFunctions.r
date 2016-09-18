@@ -320,17 +320,8 @@ XLikelihoodRUX <- function(state) {
              dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*betaX), log=TRUE))
 }
 
-x_likelihood_rux2 <- function(cases, n, fe, R, U, betaX, mbrg) {
-  #squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))), log=TRUE)-
-  #           dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X))), log=TRUE))
-  lenR <- length(R)
-  lambda0 <- rep(n,each=lenR)*exp(fe+rep(R,ncol(n))+rep(U,each=lenR))
-  lambda1 <- lambda0 * exp(rep(betaX[mbrg],each=lenR))
-  squashProd(cases * (0 - rep(betaX[mbrg],each=lenR)) - lambda0 + lambda1)
-}
-
 XLikelihoodRUX2 <- function(state) {
-  x_likelihood_rux2(cases, n, state$fe, state$R, state$U, state$betaX, mbrg)
+  x_likelihood_rux2(cases, n, state$fe, state$R, state$U, state$betaX, wch)
 }
 
 XLikelihoodRUX3 <- function(j,state) {
