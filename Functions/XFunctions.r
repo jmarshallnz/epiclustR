@@ -107,8 +107,7 @@ XUpdate0 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X
-  Xfcd <- XLikelihood(state)
-  state$X <- matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  state$X <- XLikelihood(state)
   #Update pX
   state$pX <- rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X)) 
   # Update betaX
@@ -145,8 +144,7 @@ XUpdate1 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X
-  Xfcd <- XLikelihood(state)
-  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  state$X <- XLikelihood(state)
   # Update betaX
   proposal<-rnorm(1,betaX,sigmaX)
   ap<-betaXLikelihood(betaX,proposal,state)
@@ -181,8 +179,7 @@ XUpdate2 <- function(i=0, state) {
   rps <- ncol(state$X)
 
   # Update X, pX
-  Xfcd <- XLikelihood(state)
-  state$X<-matrix(rbinom(tps*rgs,1,Xfcd),tps,rgs)
+  state$X <- XLikelihood(state)
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
   # Update betaX
   for (j in 1:rgs) {
@@ -225,8 +222,7 @@ XUpdate3 <- function(i=0, state) {
 
   # Update X
   for (j in 1:tps) {
-    Xfcd <- XLikelihood(j,state)
-    X$state[j,]<-rbinom(rgs,1,Xfcd)
+    X$state[j,] <- XLikelihood(j,state)
   }
   #Update pX
   state$pX<-rbeta(1,aX+sum(state$X),bX+tps*rgs-sum(state$X))
@@ -314,11 +310,12 @@ XLikelihoodRUX <- function(state) {
   X     <- state$X
   Xr <- squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*betaX), log=TRUE)-
                    dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*betaX), log=TRUE))
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 
 XLikelihoodRUX2 <- function(state) {
-  x_likelihood_rux2(cases, n, state$fe, state$R, state$U, state$betaX, state$pX, wch)
+  x_sample_rux2(cases, n, state$fe, state$R, state$U, state$betaX, state$pX, wch)
 }
 
 XLikelihoodRUX3 <- function(j,state) {
@@ -343,7 +340,8 @@ XLikelihoodRUX3 <- function(j,state) {
     Xr <- squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+0)*betaX[mbrg]), log=TRUE)-
                        dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+1)*betaX[mbrg]), log=TRUE))
   }
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 XLikelihoodRUX4 <- function(j,state) {
   fe  <- state$fe
@@ -365,7 +363,8 @@ XLikelihoodRUX4 <- function(j,state) {
     Xr <- squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],0)*betaX[mbrg]), log=TRUE)-
                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],1)*betaX[mbrg]), log=TRUE))
   }
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 XLikelihoodRX <- function(state) {
   fe  <- state$fe
@@ -373,7 +372,8 @@ XLikelihoodRX <- function(state) {
   betaX <- state$betaX
   Xr <- squashProd(dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+0*betaX), log=TRUE)-
                    dpois(cases,rep(n,each=length(R))*exp(fe+rep(R,ncol(n))+1*betaX), log=TRUE))
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 XLikelihoodUX <- function(state) {
   tps <- params$tps
@@ -382,7 +382,8 @@ XLikelihoodUX <- function(state) {
   betaX <- state$betaX
   Xr <- squashProd(dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+0*betaX), log=TRUE)-
                    dpois(cases,rep(n,each=tps)*exp(fe+rep(U,each=tps)+1*betaX), log=TRUE))
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 XLikelihoodX <- function(state) {
   tps <- params$tps
@@ -390,7 +391,8 @@ XLikelihoodX <- function(state) {
   betaX <- state$betaX
   Xr <- squashProd(dpois(cases,rep(n,each=tps)*exp(fe+0*betaX), log=TRUE)-
                    dpois(cases,rep(n,each=tps)*exp(fe+1*betaX), log=TRUE))
-  state$pX / (Xr*(1-state$pX) + state$pX)
+  Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
+  matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
 }
 betaXLikelihoodRUX <- function(curr,prop,state) {
   tps <- length(R)
