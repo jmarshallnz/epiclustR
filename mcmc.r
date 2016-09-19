@@ -32,12 +32,7 @@ betaXLikelihood<-betaXLikelihoodRUX2
 
 t <- system.time(
 for (i in 1:params$iters) {
-  state <- RUpdate(i, state)
-#  cat("done rupdate, running uupdate\n")
-  state <- UUpdate(i, state)
-#  cat("done uupdate, running xupdate\n")
-  state <- XUpdate(i, state)
-#  cat("done xupdate\n")
+  state <- Update(i, state)
   if (i%%params$samplefreq==0) {
     Sample(state)
     state <- InitAcceptance(state)

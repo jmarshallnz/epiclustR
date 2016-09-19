@@ -71,6 +71,28 @@ RSetPriors <- function(setpriors) {
   }
 }
 
+Update <- function(i=0, state) {
+  # transfer the priors
+  prior <- list(aR=aR, bR=bR, sigmaR=sigmaR,
+                aU=aU, bU=bU, sigmaU=sigmaU,
+                aX=aX, bX=bX, sigmaX=sigmaX, abetaX=abetaX, bbetaX=bbetaX)
+
+  # call directly into C++ land
+  state <- update_r(cases, n, mbrg, i, state, prior, Rmu, Rsigma_eigen)
+  state <- update_u(cases, n, mbrg, weight, i, state, prior)
+  state <- update_x(cases, n, wch, state, prior)
+
+  # TODO: Ideally we'd remove this. Problem is full X is large to save
+  #       in terms of the posterior, and if we want it right we have
+  #       to get rid of the burnin period.
+  #       I guess saving X to a binary file might be way more efficient
+  #       though? About 16 times smaller.
+  if (i>params$burnin) {
+    state$cumX<-state$cumX+state$X
+  }
+  return(state)
+}
+
 RUpdate <- function(i=0, state) {
   # call into C++ land
   update_r(cases, n, mbrg, i, state, list(aR=aR, bR=bR, sigmaR=sigmaR), Rmu, Rsigma_eigen)
