@@ -73,13 +73,13 @@ RSetPriors <- function(setpriors) {
 RUpdate <- function(i=0, state) {
   # save current state
   R  <- state$R
-  kR <- state$kR
   acceptR <- state$acceptR
   rejectR <- state$rejectR
 
+  state <- update_r(cases, n, i, state, list(aR=aR, bR=bR))
+  kR <- state$kR
+
   lenR <- length(R)
-  # Gibb's step to update kR
-  kR <- rgamma(1,aR+(lenR-2)/2,rate=bR+sum_r_squared(R)/2)
   method<-1+i%%(1+length(Rblock))
   endmethod<-rbinom(1,1,0.5)
   j<-1 #start of update block
