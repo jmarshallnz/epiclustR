@@ -37,26 +37,6 @@ double r_likelihood(NumericMatrix cases,
   return lr;
 }
 
-double r_likelihood(NumericMatrix cases,
-                    NumericVector n,
-                    NumericVector mbrg,
-                    double fe,
-                    NumericVector U,
-                    NumericMatrix X,
-                    NumericVector betaX,
-                    double curr,
-                    double prop,
-                    int j) {
-  const int n_u = U.length();
-  double lr = 0;
-  for (int u = 0; u < n_u; u++) {
-    double loglambda = fe + U[u] + X(j, mbrg[u]-1)*betaX[mbrg[u]-1];
-    lr += cases(j,u) * (prop - curr)
-      - n[u] * (::exp(loglambda + prop) - ::exp(loglambda + curr));
-  }
-  return lr;
-}
-
 inline double square_diff(double a, double b) {
   return a*a - b*b;
 }
