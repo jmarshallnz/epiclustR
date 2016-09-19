@@ -12,4 +12,5 @@ namespace Util {
     //  return (p > 0.5) ? 1-ans : ans;
   }
   inline double rgamma(double shape, double rate) { return R::rgamma(shape, 1/rate); }
+  Rcpp::NumericVector rmvnorm(Rcpp::NumericVector mu, Rcpp::NumericMatrix eig_sigma);
 }

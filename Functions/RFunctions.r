@@ -1,10 +1,10 @@
 #Defaults
-library(MASS)
 sigmaR<-1
 Rblock<-c(4,5,9,11)
 
 # load in likelihood
 Rcpp::sourceCpp('src/likelihood.cpp')
+Rcpp::sourceCpp('src/rmvnorm.cpp')
 
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
@@ -16,11 +16,6 @@ RSumFunction <- function(R) {
 eigen_scale <- function(A) {
   eig <- eigen(A, symmetric=TRUE)
   eig$vectors %*% diag(sqrt(pmax(eig$values,0)))
-}
-
-multinorm <- function(mu, eigen_sigma) {
-  X <- rnorm(length(mu));
-  as.numeric(mu + eigen_sigma %*% X)
 }
 
 RInitialize <- function() {
@@ -115,7 +110,7 @@ RUpdate <- function(i=0, state) {
           k<-lenR-2
         }
         mu <- Rmu[[method]][,1]*R[j-2]+Rmu[[method]][,2]*R[j-1]+Rmu[[method]][,3]*R[k+1]+Rmu[[method]][,4]*R[k+2];
-        proposal <- multinorm(mu, Rsigma_eigen[[method]]/sqrt(kR))
+        proposal <- rmvnorm(mu, Rsigma_eigen[[method]]/sqrt(kR))
       }
       ap<-RLikelihood(j,k,R[j:k],proposal,state)
     }
