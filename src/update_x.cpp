@@ -22,9 +22,9 @@ Rcpp::IntegerMatrix sample_x(NumericMatrix cases,
         int u = rgmb_r[j]-1;
         double loglambda0 = fe + R[t] + U[u];
         double loglambda1 = loglambda0 + betaX[r];
-        loglr += n[u] * (exp(loglambda1) - exp(loglambda0)) - cases(t,u) * betaX[r];
+        loglr += n[u] * (::exp(loglambda1) - ::exp(loglambda0)) - cases(t,u) * betaX[r];
       }
-      double p = pX / (exp(loglr) * (1-pX) + pX);
+      double p = pX / (::exp(loglr) * (1-pX) + pX);
       X(t, r) = Util::rbernoulli(p);
     }
   }
@@ -58,7 +58,7 @@ double betax_likelihood(NumericMatrix cases,
       int u = rgmb_j[r]-1;
       double loglambda = fe + R[t] + U[u];
       lr += cases(t,u) * X(t,j) * (prop - curr)
-        - n[u] * (exp(loglambda + X(t,j)*prop) - exp(loglambda + X(t,j)*curr));
+        - n[u] * (::exp(loglambda + X(t,j)*prop) - ::exp(loglambda + X(t,j)*curr));
     }
   }
   return lr;
@@ -105,10 +105,10 @@ Rcpp::List update_x(NumericMatrix cases,
     if (proposal <= 0) {
        rejectX++;
     } else {
-      double prior_ratio = (abetaX - 1) * (log(proposal) - log(betaX[r])) - (proposal - betaX[r])*bbetaX;
+      double prior_ratio = (abetaX - 1) * (::log(proposal) - ::log(betaX[r])) - (proposal - betaX[r])*bbetaX;
       double ap = betax_likelihood(cases, n, fe, R, U, X, rgmb[r], betaX[r], proposal, r) + prior_ratio;
       double un = R::unif_rand();
-      if (ap >= 0 || un <= exp(ap)) {
+      if (ap >= 0 || un <= ::exp(ap)) {
         betaX[r] = proposal;
         acceptX++;
       } else {

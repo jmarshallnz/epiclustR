@@ -18,7 +18,7 @@ double u_likelihood(NumericMatrix cases,
   for (int t = 0; t < n_r; t++) {
     double loglambda = fe + R[t] + betaX[mbrg[u]-1] * X(t, mbrg[u]-1);
     lr += cases(t,u) * (prop - curr)
-          - n[u] * (exp(loglambda+prop) - exp(loglambda+curr));
+          - n[u] * (::exp(loglambda+prop) - ::exp(loglambda+curr));
   }
   return lr;
 //  tps <- length(R)
@@ -76,7 +76,7 @@ Rcpp::List update_u(NumericMatrix cases,
       for (int j = 1; j < nb(u,0) + 1; j++)
         sumU += U[nb(u,j)-1];
 
-      proposal = R::rnorm(sumU/nb(u,0), 1/sqrt(kU * nb(u,0)));
+      proposal = R::rnorm(sumU/nb(u,0), 1/::sqrt(kU * nb(u,0)));
       ap = u_likelihood(cases, n, fe, R, X, mbrg, betaX, U[u], proposal, u);
     } else { // M-H random walk proposal
       proposal = R::rnorm(U[u], sigmaU);
@@ -89,7 +89,7 @@ Rcpp::List update_u(NumericMatrix cases,
       ap = u_likelihood(cases, n, fe, R, X, mbrg, betaX, U[u], proposal, u) - kU * sumU / 2;
     }
     double un = R::unif_rand();
-    if (ap >= 0 || un<=exp(ap)) {
+    if (ap >= 0 || un <= ::exp(ap)) {
       U[u] = proposal;
       acceptU[i%2]++;
     } else {
