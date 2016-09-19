@@ -5,6 +5,7 @@ Rblock<-c(4,5,9,11)
 # load in likelihood
 Rcpp::sourceCpp('src/likelihood.cpp')
 Rcpp::sourceCpp('src/rmvnorm.cpp')
+Rcpp::sourceCpp('src/update_r.cpp')
 
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
@@ -78,7 +79,7 @@ RUpdate <- function(i=0, state) {
 
   lenR <- length(R)
   # Gibb's step to update kR
-  kR <- rgamma(1,aR+(lenR-2)/2,rate=bR+RSumFunction(R)/2)
+  kR <- rgamma(1,aR+(lenR-2)/2,rate=bR+sum_r_squared(R)/2)
   method<-1+i%%(1+length(Rblock))
   endmethod<-rbinom(1,1,0.5)
   j<-1 #start of update block
