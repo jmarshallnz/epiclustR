@@ -72,57 +72,12 @@ RSetPriors <- function(setpriors) {
 }
 
 RUpdate <- function(i=0, state) {
-  # save current state
-  R  <- state$R
-  acceptR <- state$acceptR
-  rejectR <- state$rejectR
+  # call into C++ land
+  state <- update_r(cases, n, mbrg, i, state, list(aR=aR, bR=bR, sigmaR=sigmaR), Rmu, Rsigma_eigen)
 
-  state <- update_r(cases, n, i, state, list(aR=aR, bR=bR))
-  kR <- state$kR
-
-  lenR <- length(R)
-  method<-1+i%%(1+length(Rblock))
-  endmethod<-rbernoulli(0.5)
-  j<-1 #start of update block
-  while (j<=lenR) {
-    k<-j# end of update block
-    if (method>length(Rblock) || (endmethod==0 && (j<3 || j>lenR-2))) {
-      # Metropolis Hastings proposal step to update R.
-      state$R <- R
-      out <- update_r_mh(cases, n, mbrg, state, list(sigmaR=sigmaR), j-1)
-      proposal <- out$proposal
-      ap <- out$ap
-    } else {
-      # Conditional Prior Proposal step to update R
-      state$R <- R
-      out <- update_r_cond(cases, n, mbrg, state, Rmu[[method]], Rsigma_eigen[[method]], j-1)
-      proposal = out$proposal
-      ap = out$ap
-
-      if (j > 2 && j <= lenR-2) {
-        k<-j+Rblock[method]-1
-        if (k>=lenR-1) {   # TODO: This breaks in a whole bunch of cases if Rblock[method] is large enough
-          j<-j-(k-lenR+2)
-          k<-lenR-2
-        }
-      }
-    }
-    un<-runif(1)
-    if (ap >= 0 | un<=exp(ap)) {
-      R[j:k]<-proposal
-      acceptR[method]<-acceptR[method]+1
-    } else {
-      rejectR[method]<-rejectR[method]+1
-    }
-    j<-k+1
-  }
-  state$kR <- kR
-  state$fe <- state$fe + mean(R)
-  state$R  <- R - mean(R)
-
-#  cat("Ending RUpdate, dim(R)=", dim(state$R), "\n")
-  state$acceptR <- acceptR
-  state$rejectR <- rejectR
+  # update fe and R
+  state$fe <- state$fe + mean(state$R)
+  state$R  <- state$R - mean(state$R)
   return(state)
 }
 
