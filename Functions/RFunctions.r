@@ -88,12 +88,10 @@ RUpdate <- function(i=0, state) {
     k<-j# end of update block
     if (method>length(Rblock) || (endmethod==0 && (j<3 || j>lenR-2))) {
       # Metropolis Hastings proposal step to update R.
-      proposal<-rnorm(1,R[j],sd=sigmaR)
-      ap<-RLikelihood(j,k,R[j:k],proposal,state)
-      # full conditional component of ap
-      if (j>2) { ap <- ap - kR*((R[j-2]-2*R[j-1]+proposal)^2-(R[j-2]-2*R[j-1]+R[j])^2)/2 }
-      if (j>1 && j<lenR) { ap <- ap - kR*((R[j-1]-2*proposal+R[j+1])^2-(R[j-1]-2*R[j]+R[j+1])^2)/2 }
-      if (j<lenR-1) { ap <- ap - kR*((proposal-2*R[j+1]+R[j+2])^2-(R[j]-2*R[j+1]+R[j+2])^2)/2 }
+      state$R <- R
+      out <- update_r_mh(cases, n, mbrg, state, list(sigmaR=sigmaR), j-1)
+      proposal <- out$proposal
+      ap <- out$ap
     } else {
       # Conditional Prior Proposal step to update R
       if (j==1) {
