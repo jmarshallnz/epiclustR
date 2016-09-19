@@ -4,12 +4,13 @@
 using namespace Rcpp;
 
 inline int rbernoulli(double p) {
-  double pp = std::max(p, 1-p);
-  int ans = R::unif_rand() < pp ? 0 : 1;
-  return (p > 0.5) ? 1-ans : ans;
+  // this implementation is slower but identical to R::rbinom for n=1
+//  double pp = std::max(p, 1-p);
+//  int ans = R::unif_rand() < pp ? 0 : 1;
+//  return (p > 0.5) ? 1-ans : ans;
 
-  // a more efficient implementation (but different to R's) is just. Saves a few compares
-//  return (R::unif_rand() > p) ? 0 : 1;
+  // a more efficient implementation saving a few compares
+  return (R::unif_rand() > p) ? 0 : 1;
 }
 
 Rcpp::IntegerMatrix sample_x(NumericMatrix cases,
