@@ -111,12 +111,12 @@ Rcpp::List update_x(NumericMatrix cases,
 
   for (int r = 0; r < betaX.length(); r++) {
     double proposal = R::rnorm(betaX[r], sigmaX);
-    double un = R::unif_rand(); // always take the same number of random numbers...
     if (proposal <= 0) {
        rejectX++;
     } else {
       double prior_ratio = (abetaX - 1) * (log(proposal) - log(betaX[r])) - (proposal - betaX[r])*bbetaX;
       double ap = betax_likelihood(cases, n, fe, R, U, X, rgmb[r], betaX[r], proposal, r) + prior_ratio;
+      double un = R::unif_rand();
       if (ap >= 0 || un <= exp(ap)) {
         betaX[r] = proposal;
         acceptX++;

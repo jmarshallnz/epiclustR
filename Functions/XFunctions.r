@@ -205,12 +205,12 @@ XUpdate3 <- function(i=0, state) {
   # Update betaX
   for (j in 1:rgs) {
     proposal<-rnorm(1,betaX[j],sigmaX)
-    un<-runif(1) # always take the same number of random numbers...
     if (proposal < 0) {
       rejectX <- rejectX + 1
     } else {
       prior_ratio <- (abetaX - 1) * (log(proposal) - log(betaX[j])) - (proposal - betaX[j])*bbetaX
       ap <- betaXLikelihood(j,betaX[j],proposal,state)+prior_ratio
+      un<-runif(1)
       if (ap >= 0 || un<=exp(ap)) {
         betaX[j]<-proposal
         acceptX<-acceptX+1
