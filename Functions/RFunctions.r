@@ -6,6 +6,7 @@ Rblock<-c(4,5,9,11)
 Rcpp::sourceCpp('src/likelihood.cpp')
 Rcpp::sourceCpp('src/rmvnorm.cpp')
 Rcpp::sourceCpp('src/update_r.cpp')
+Rcpp::sourceCpp('src/rbernoulli.cpp')
 
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
@@ -81,7 +82,7 @@ RUpdate <- function(i=0, state) {
 
   lenR <- length(R)
   method<-1+i%%(1+length(Rblock))
-  endmethod<-rbinom(1,1,0.5)
+  endmethod<-rbernoulli(0.5)
   j<-1 #start of update block
   while (j<=lenR) {
     k<-j# end of update block
