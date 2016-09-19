@@ -4,7 +4,6 @@
 
 using namespace Rcpp;
 
-// [[Rcpp::export]]
 double sum_r_squared(NumericVector R) {
   double sum = 0;
   for (int i = 0; i < R.length()-2; i++) {
