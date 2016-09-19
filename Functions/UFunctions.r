@@ -1,8 +1,6 @@
 # Defaults
 sigmaU<-1
 
-Rcpp::sourceCpp('src/update_u.cpp')
-
 UInitialize <- function() {
   if (params$tidyup) {file.remove(file.path(params$outpath, "U.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "kU.txt"))}

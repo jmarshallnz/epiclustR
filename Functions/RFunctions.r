@@ -2,9 +2,7 @@
 sigmaR<-1
 Rblock<-c(4,5,9,11)
 
-Rcpp::sourceCpp('src/rmvnorm.cpp')
-Rcpp::sourceCpp('src/update_r.cpp')
-Rcpp::sourceCpp('src/rbernoulli.cpp')
+library(epiclustR)
 
 # This returns the sum of R squared, i.e. the variance of R's for the kR update
 RSumFunction <- function(R) {
@@ -80,10 +78,11 @@ Update <- function(i=0, state) {
                   sigmaU=sigmaU,
                   sigmaX=sigmaX)
 
-  # call directly into C++ land
-  state <- update_r(cases, n, mbrg, i, state, prior, control)
-  state <- update_u(cases, n, mbrg, weight, i, state, prior, control)
-  state <- update_x(cases, n, wch, state, prior, control)
+  # data
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+
+  # do the update
+  state <- update(data, i, state, prior, control)
 
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have
