@@ -17,20 +17,20 @@ double r_likelihood(NumericMatrix cases,
                          NumericVector n,
                          NumericVector mbrg,
                          double fe,
+                         NumericVector R,
                          NumericVector U,
                          NumericMatrix X,
                          NumericVector betaX,
-                         NumericVector curr,
                          NumericVector prop,
                          int j) {
   const int n_u = U.length();
   double lr = 0;
   for (int u = 0; u < n_u; u++) {
     double l_u = fe + U[u];
-    for (int i = 0; i < curr.length(); i++) {
+    for (int i = 0; i < prop.length(); i++) {
       double loglambda = l_u + X(i+j, mbrg[u]-1)*betaX[mbrg[u]-1];
-      lr += cases(i+j,u) * (prop[i] - curr[i])
-        - n[u] * (exp(loglambda + prop[i]) - exp(loglambda + curr[i]));
+      lr += cases(i+j,u) * (prop[i] - R[i+j])
+        - n[u] * (exp(loglambda + prop[i]) - exp(loglambda + R[i+j]));
     }
   }
   return lr;
@@ -94,6 +94,54 @@ Rcpp::List update_r_mh(NumericMatrix cases,
 
   out["proposal"] = proposal;
   out["ap"] = ap + prior_ratio;
+
+  return out;
+}
+
+// [[Rcpp::export]]
+Rcpp::List update_r_cond(NumericMatrix cases,
+                       NumericVector n,
+                       NumericVector mbrg,
+                       List state,
+                       NumericMatrix Rmu,
+                       NumericMatrix Rsigma,
+                       int j) {
+
+  RNGScope scope;
+  Rcpp::List out;
+
+  // extract information from our state
+  NumericVector R = state["R"];
+  double       kR = state["kR"];
+  double       fe = state["fe"];
+  NumericVector U = state["U"];
+  NumericMatrix X = state["X"];
+  NumericVector betaX = state["betaX"];
+
+  NumericVector proposal;
+  if (j == 0)
+    proposal = R::rnorm(2*R[1]-R[2], sqrt(1/kR));
+  else if (j == 1)
+    proposal = R::rnorm(0.4*R[0]+0.8*R[2]-0.2*R[3], sqrt(0.2/kR));
+  else if (j == R.length() - 2) // TODO: I think the +0.2 should be +0.4...
+    proposal = R::rnorm(-0.2*R[j-2]+0.8*R[j-1]+0.2*R[j+1], sqrt(0.2/kR));
+  else if (j == R.length() - 1)
+    proposal = R::rnorm(-R[j-2]+2*R[j-1], sqrt(1/kR));
+  else {
+    int k = j + Rmu.nrow() - 1;
+    if (k > R.length()-3) {
+      k = R.length() - 3;
+      j = k - Rmu.nrow() + 1;
+    }
+    NumericVector mu = no_init(Rmu.nrow());
+    for (int i = 0; i < mu.length(); i++)
+      mu[i] = Rmu(i,0)*R[j-2]+Rmu(i,1)*R[j-1]+Rmu(i,2)*R[k+1]+Rmu(i,3)*R[k+2];
+    proposal = Util::rmvnorm(mu, Rsigma/sqrt(kR));
+  }
+  double ap = r_likelihood(cases, n, mbrg, fe, R, U, X, betaX, proposal, j);
+
+  out["proposal"] = proposal;
+  out["ap"] = ap;
 
   return out;
 }

@@ -94,28 +94,20 @@ RUpdate <- function(i=0, state) {
       ap <- out$ap
     } else {
       # Conditional Prior Proposal step to update R
-      if (j==1) {
-        proposal<-rnorm(1,2*R[2]-R[3],(1/kR)^(0.5))
-      } else if (j==2) {
-        proposal<-rnorm(1,0.4*R[1]+0.8*R[3]-0.2*R[4],(0.2/kR)^(0.5))
-      } else if (j==lenR-1) {
-        proposal<-rnorm(1,-0.2*R[lenR-3]+0.8*R[lenR-2]+0.2*R[lenR],(0.2/kR)^(0.5))
-      } else if (j==lenR) {
-        proposal<-rnorm(1,-R[lenR-2]+2*R[lenR-1],(1/kR)^(0.5))
-      } else {
-        #proposal<-rnorm(1,-R[j-2]/6+R[j-1]*4/6+R[j+1]*4/6-R[j+2]/6,(1/6/kR)^(0.5))
+      state$R <- R
+      out <- update_r_cond(cases, n, mbrg, state, Rmu[[method]], Rsigma_eigen[[method]], j-1)
+      proposal = out$proposal
+      ap = out$ap
+
+      if (j > 2 && j <= lenR-2) {
         k<-j+Rblock[method]-1
         if (k>=lenR-1) {   # TODO: This breaks in a whole bunch of cases if Rblock[method] is large enough
           j<-j-(k-lenR+2)
           k<-lenR-2
         }
-        mu <- Rmu[[method]][,1]*R[j-2]+Rmu[[method]][,2]*R[j-1]+Rmu[[method]][,3]*R[k+1]+Rmu[[method]][,4]*R[k+2];
-        proposal <- rmvnorm(mu, Rsigma_eigen[[method]]/sqrt(kR))
       }
-      ap<-RLikelihood(j,k,R[j:k],proposal,state)
     }
     un<-runif(1)
-#    cat("ap=", ap, "un=", un, "\n")
     if (ap >= 0 | un<=exp(ap)) {
       R[j:k]<-proposal
       acceptR[method]<-acceptR[method]+1
