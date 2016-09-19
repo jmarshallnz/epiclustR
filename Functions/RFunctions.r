@@ -73,14 +73,19 @@ RSetPriors <- function(setpriors) {
 
 Update <- function(i=0, state) {
   # transfer the priors
-  prior <- list(aR=aR, bR=bR, sigmaR=sigmaR,
-                aU=aU, bU=bU, sigmaU=sigmaU,
-                aX=aX, bX=bX, sigmaX=sigmaX, abetaX=abetaX, bbetaX=bbetaX)
+  prior <- list(aR=aR, bR=bR,
+                aU=aU, bU=bU,
+                aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
+
+  # transfer the control of proposals
+  control <- list(sigmaR=sigmaR, Rmu=Rmu, Rsigma=Rsigma_eigen,
+                  sigmaU=sigmaU,
+                  sigmaX=sigmaX)
 
   # call directly into C++ land
-  state <- update_r(cases, n, mbrg, i, state, prior, Rmu, Rsigma_eigen)
-  state <- update_u(cases, n, mbrg, weight, i, state, prior)
-  state <- update_x(cases, n, wch, state, prior)
+  state <- update_r(cases, n, mbrg, i, state, prior, control)
+  state <- update_u(cases, n, mbrg, weight, i, state, prior, control)
+  state <- update_x(cases, n, wch, state, prior, control)
 
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have

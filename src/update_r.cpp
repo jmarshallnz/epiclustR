@@ -48,8 +48,7 @@ Rcpp::List update_r(NumericMatrix cases,
                 int i,
                 List state,
                 List prior,
-                List Rmu,
-                List Rsigma) {
+                List control) {
 
   RNGScope scope;
   List out = state;
@@ -65,7 +64,9 @@ Rcpp::List update_r(NumericMatrix cases,
 
   double aR = prior["aR"];
   double bR = prior["bR"];
-  double sigmaR = prior["sigmaR"];
+  double sigmaR = control["sigmaR"];
+  List Rmu      = control["Rmu"];
+  List Rsigma   = control["Rsigma"];
 
   // Gibbs update for kR
   double kR = Util::rgamma(aR + 0.5*(R.length()-2), bR+0.5*sum_r_squared(R));

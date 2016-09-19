@@ -46,7 +46,8 @@ Rcpp::List update_u(NumericMatrix cases,
                 NumericMatrix nb,
                 int i,
                 List state,
-                List prior) {
+                List prior,
+                List control) {
 
   RNGScope scope;
 
@@ -63,7 +64,7 @@ Rcpp::List update_u(NumericMatrix cases,
 
   double aU = prior["aU"];
   double bU = prior["bU"];
-  double sigmaU = prior["sigmaU"];
+  double sigmaU = control["sigmaU"];
 
   // Gibb's step to update kU
   kU = Util::rgamma(aU + 0.5*(U.length()-1), bU + 0.5*sum_u_squared(U, nb));

@@ -73,7 +73,8 @@ Rcpp::List update_x(NumericMatrix cases,
                     NumericVector n,
                     List rgmb,
                     List state,
-                    List prior) {
+                    List prior,
+                    List control) {
 
   RNGScope scope;
 
@@ -96,9 +97,9 @@ Rcpp::List update_x(NumericMatrix cases,
   out["pX"] = pX;
 
   // sample betaX
-  double sigmaX = prior["sigmaX"];
   double abetaX = prior["abetaX"];
   double bbetaX = prior["bbetaX"];
+  double sigmaX = control["sigmaX"];
 
   for (int r = 0; r < betaX.length(); r++) {
     double proposal = R::rnorm(betaX[r], sigmaX);
