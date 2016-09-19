@@ -2,8 +2,6 @@
 sigmaR<-1
 Rblock<-c(4,5,9,11)
 
-# load in likelihood
-Rcpp::sourceCpp('src/likelihood.cpp')
 Rcpp::sourceCpp('src/rmvnorm.cpp')
 Rcpp::sourceCpp('src/update_r.cpp')
 Rcpp::sourceCpp('src/rbernoulli.cpp')
