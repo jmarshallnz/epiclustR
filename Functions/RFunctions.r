@@ -73,12 +73,7 @@ RSetPriors <- function(setpriors) {
 
 RUpdate <- function(i=0, state) {
   # call into C++ land
-  state <- update_r(cases, n, mbrg, i, state, list(aR=aR, bR=bR, sigmaR=sigmaR), Rmu, Rsigma_eigen)
-
-  # update fe and R
-  state$fe <- state$fe + mean(state$R)
-  state$R  <- state$R - mean(state$R)
-  return(state)
+  update_r(cases, n, mbrg, i, state, list(aR=aR, bR=bR, sigmaR=sigmaR), Rmu, Rsigma_eigen)
 }
 
 RRisk <- function(state) {

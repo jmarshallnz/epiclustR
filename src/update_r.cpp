@@ -121,7 +121,10 @@ Rcpp::List update_r(NumericMatrix cases,
     }
     j += proposal.length();
   }
-  out["R"] = R;
+
+  double meanR = mean(R);
+  out["fe"] = fe + meanR;
+  out["R"] = R - meanR;
   out["kR"] = kR;
 
   out["acceptR"] = acceptR;
