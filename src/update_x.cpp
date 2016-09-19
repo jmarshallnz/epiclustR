@@ -1,17 +1,7 @@
 #include <Rcpp.h>
-#include <math.h>
+#include "util.h"
 
 using namespace Rcpp;
-
-inline int rbernoulli(double p) {
-  // this implementation is slower but identical to R::rbinom for n=1
-//  double pp = std::max(p, 1-p);
-//  int ans = R::unif_rand() < pp ? 0 : 1;
-//  return (p > 0.5) ? 1-ans : ans;
-
-  // a more efficient implementation saving a few compares
-  return (R::unif_rand() > p) ? 0 : 1;
-}
 
 Rcpp::IntegerMatrix sample_x(NumericMatrix cases,
                                   NumericVector n,
@@ -35,7 +25,7 @@ Rcpp::IntegerMatrix sample_x(NumericMatrix cases,
         loglr += n[u] * (exp(loglambda1) - exp(loglambda0)) - cases(t,u) * betaX[r];
       }
       double p = pX / (exp(loglr) * (1-pX) + pX);
-      X(t, r) = rbernoulli(p);
+      X(t, r) = Util::rbernoulli(p);
     }
   }
   return X;

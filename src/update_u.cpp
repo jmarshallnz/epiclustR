@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include <math.h>
+#include "util.h"
 
 using namespace Rcpp;
 
@@ -66,7 +66,7 @@ Rcpp::List update_u(NumericMatrix cases,
   double sigmaU = prior["sigmaU"];
 
   // Gibb's step to update kU
-  kU = R::rgamma(aU + 0.5*(U.length()-1), 1 / (bU + 0.5*sum_u_squared(U, nb)));
+  kU = Util::rgamma(aU + 0.5*(U.length()-1), bU + 0.5*sum_u_squared(U, nb));
   out["kU"] = kU;
 
   for (int u = 0; u < U.length(); u++) {
