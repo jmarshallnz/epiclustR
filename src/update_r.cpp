@@ -114,9 +114,7 @@ Rcpp::List update_r(NumericMatrix cases,
     }
     double un = R::unif_rand();
     if (ap >= 0 | un <= ::exp(ap)) {
-      for (int i = 0; i < proposal.length(); i++) {
-        R[j+i] = proposal[i];
-      }
+      std::copy(proposal.begin(), proposal.end(), R.begin() + j);
       acceptR[method]++;
     } else {
       rejectR[method]++;
