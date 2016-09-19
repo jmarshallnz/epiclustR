@@ -12,8 +12,20 @@ RSumFunction <- function(R) {
   sum((R[1:(lenR-2)] - 2*R[2:(lenR-1)] + R[3:lenR])^2)
 }
 
+# computes the scaled eigen-vectors of A
+eigen_scale <- function(A) {
+  eig <- eigen(A, symmetric=TRUE)
+  eig$vectors %*% diag(sqrt(pmax(eig$values,0)))
+}
+
+multinorm <- function(mu, eigen_sigma) {
+  X <- rnorm(length(mu));
+  as.numeric(mu + eigen_sigma %*% X)
+}
+
 RInitialize <- function() {
   Rsigma<<-list()
+  Rsigma_eigen<<-list()
   Rmu<<-list()
   for (i in 1:length(Rblock)) {
     K<-6*diag(Rblock[i])#Structure matrix for R
@@ -24,6 +36,7 @@ RInitialize <- function() {
       if (j<Rblock[i]-1) {K[j,j+2]<-1}
     }
     Rsigma[[i]]<<-solve(K)
+    Rsigma_eigen[[i]]<<-eigen_scale(Rsigma[[i]])
     t1<-matrix(0,Rblock[i],1)
     t2<-matrix(0,Rblock[i],1)
     t3<-matrix(0,Rblock[i],1)
@@ -101,7 +114,8 @@ RUpdate <- function(i=0, state) {
           j<-j-(k-lenR+2)
           k<-lenR-2
         }
-        proposal<-mvrnorm(1,Rmu[[method]][,1]*R[j-2]+Rmu[[method]][,2]*R[j-1]+Rmu[[method]][,3]*R[k+1]+Rmu[[method]][,4]*R[k+2],Rsigma[[method]]/kR)
+        mu <- Rmu[[method]][,1]*R[j-2]+Rmu[[method]][,2]*R[j-1]+Rmu[[method]][,3]*R[k+1]+Rmu[[method]][,4]*R[k+2];
+        proposal <- multinorm(mu, Rsigma_eigen[[method]]/sqrt(kR))
       }
       ap<-RLikelihood(j,k,R[j:k],proposal,state)
     }
