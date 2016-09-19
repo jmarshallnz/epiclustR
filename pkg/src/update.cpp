@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include "update.h"
+#include "data.h"
 
 using namespace Rcpp;
 
@@ -20,15 +21,11 @@ Rcpp::List update(List data,
                   List control) {
 
   // setup our objects
-  NumericMatrix cases = data["cases"];
-  NumericVector     n = data["popn"];
-  NumericVector  mbrg = data["mbrg"];
-  NumericMatrix    nb = data["nb"];
-  List           rgmb = data["rgmb"];
+  Data d(data);
 
   List s = state;
-  s = update_r(cases, n, mbrg, i, s, prior, control);
-  s = update_u(cases, n, mbrg, nb, i, s, prior, control);
-  s = update_x(cases, n, rgmb, s, prior, control);
+  s = update_r(d.cases, d.n, d.mbrg, i, s, prior, control);
+  s = update_u(d.cases, d.n, d.mbrg, d.nb, i, s, prior, control);
+  s = update_x(d.cases, d.n, d.rgmb, s, prior, control);
   return s;
 }
