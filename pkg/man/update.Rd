@@ -4,12 +4,10 @@
 \alias{update}
 \title{Update the MCMC simulation}
 \usage{
-update(data, i, state, prior, control)
+update(data, state, prior, control)
 }
 \arguments{
 \item{data}{a list containing the data}
-
-\item{i}{the current iteration}
 
 \item{state}{the current state of the Markov chain}
 

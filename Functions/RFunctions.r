@@ -67,29 +67,29 @@ RSetPriors <- function(setpriors) {
   }
 }
 
-Update <- function(i=0, state) {
+Update <- function(state, control, burnin = FALSE) {
   # transfer the priors
   prior <- list(aR=aR, bR=bR,
                 aU=aU, bU=bU,
                 aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
 
   # transfer the control of proposals
-  control <- list(sigmaR=sigmaR, Rmu=Rmu, Rsigma=Rsigma_eigen,
-                  sigmaU=sigmaU,
-                  sigmaX=sigmaX)
+  proposal <- list(sigmaR=sigmaR, Rmu=Rmu, Rsigma=Rsigma_eigen,
+                   sigmaU=sigmaU,
+                   sigmaX=sigmaX)
 
   # data
   data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
 
-  # do the update
-  state <- update(data, i, state, prior, control)
+  # do the updates
+  state <- update(data, state, prior, c(control, proposal))
 
   # TODO: Ideally we'd remove this. Problem is full X is large to save
   #       in terms of the posterior, and if we want it right we have
   #       to get rid of the burnin period.
   #       I guess saving X to a binary file might be way more efficient
   #       though? About 16 times smaller.
-  if (i>params$burnin) {
+  if (!burnin) {
     state$cumX<-state$cumX+state$X
   }
   return(state)

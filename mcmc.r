@@ -30,17 +30,23 @@ ULikelihood<-ULikelihoodRUX2
 XLikelihood<-XLikelihoodRUX2
 betaXLikelihood<-betaXLikelihoodRUX2
 
-t <- system.time(
-for (i in 1:params$iters) {
-  state <- Update(i, state)
-  if (i%%params$samplefreq==0) {
-    Sample(state)
-    state <- InitAcceptance(state)
-  }
-  cat("iteration:", i, "\n")
+# burnin and samples are in terms of posterior samples
+control <- list(thinning = 5, samples = 100, burnin = 2)
+
+print(system.time({
+for (i in 1:control$burnin) {
+  state <- Update(state, control, burnin=TRUE)
+  state <- InitAcceptance(state)
+  cat("burnin sample:", i, "of", control$burnin, "\n")
+}
+for (i in 1:control$samples) {
+  state <- Update(state, control)
+  Sample(state)
+  state <- InitAcceptance(state)
+  cat("posterior sample:", i, "of", control$samples, "\n")
 #  cat(file=outputfile, "iteration:", i, "\n")
-})
-print(t)
+}
+}))
 #Convergence(state)
 
 compare_var <- function(variable) {
