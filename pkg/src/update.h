@@ -1,27 +1,21 @@
 #pragma once
 
 #include <Rcpp.h>
+#include "data.h"
 
-Rcpp::List update_r(Rcpp::NumericMatrix cases,
-                    Rcpp::NumericVector n,
-                    Rcpp::NumericVector mbrg,
+Rcpp::List update_r(const Data &data,
                     int i,
                     Rcpp::List state,
                     Rcpp::List prior,
                     Rcpp::List control);
 
-Rcpp::List update_u(Rcpp::NumericMatrix cases,
-                    Rcpp::NumericVector n,
-                    Rcpp::NumericVector mbrg,
-                    Rcpp::NumericMatrix nb,
+Rcpp::List update_u(const Data &data,
                     int i,
                     Rcpp::List state,
                     Rcpp::List prior,
                     Rcpp::List control);
 
-Rcpp::List update_x(Rcpp::NumericMatrix cases,
-                    Rcpp::NumericVector n,
-                    Rcpp::List rgmb,
+Rcpp::List update_x(const Data &data,
                     Rcpp::List state,
                     Rcpp::List prior,
                     Rcpp::List control);

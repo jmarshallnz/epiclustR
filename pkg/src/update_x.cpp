@@ -1,28 +1,26 @@
-#include <Rcpp.h>
+#include "update.h"
 #include "util.h"
 
 using namespace Rcpp;
 
-Rcpp::IntegerMatrix sample_x(NumericMatrix cases,
-                                  NumericVector n,
+Rcpp::IntegerMatrix sample_x(const Data &data,
                                   double fe,
                                   NumericVector R,
                                   NumericVector U,
                                   NumericVector betaX,
-                                  double pX,
-                                  List rgmb) {
+                                  double pX) {
   const int n_t = R.length();
-  const int n_r = rgmb.length();
+  const int n_r = data.rgmb.length();
   IntegerMatrix X = no_init(n_t, n_r);
   for (int r = 0; r < n_r; r++) {
     for (int t = 0; t < n_t; t++) {
       double loglr = 0;
-      NumericVector rgmb_r = rgmb[r];
+      NumericVector rgmb_r = data.rgmb[r];
       for (int j = 0; j < rgmb_r.length(); j++) {
         int u = rgmb_r[j]-1;
         double loglambda0 = fe + R[t] + U[u];
         double loglambda1 = loglambda0 + betaX[r];
-        loglr += n[u] * (::exp(loglambda1) - ::exp(loglambda0)) - cases(t,u) * betaX[r];
+        loglr += data.n[u] * (::exp(loglambda1) - ::exp(loglambda0)) - data.cases(t,u) * betaX[r];
       }
       double p = pX / (::exp(loglr) * (1-pX) + pX);
       X(t, r) = Util::rbernoulli(p);
@@ -40,25 +38,24 @@ double sample_px(IntegerMatrix X, double aX, double bX) {
   return R::rbeta(aX+sumX, bX+X.nrow()*X.ncol()-sumX);
 }
 
-double betax_likelihood(NumericMatrix cases,
-                             NumericVector n,
+double betax_likelihood(const Data &data,
                              double fe,
                              NumericVector R,
                              NumericVector U,
                              IntegerMatrix X,
-                             NumericVector rgmb_j,
                              double curr,
                              double prop,
                              int j) {
   const int n_t = R.length();
+  NumericVector rgmb_j = data.rgmb[j];
   const int n_r = rgmb_j.length();
   double lr = 0;
   for (int t = 0; t < n_t; t++) {
     for (int r = 0; r < n_r; r++) {
       int u = rgmb_j[r]-1;
       double loglambda = fe + R[t] + U[u];
-      lr += cases(t,u) * X(t,j) * (prop - curr)
-        - n[u] * (::exp(loglambda + X(t,j)*prop) - ::exp(loglambda + X(t,j)*curr));
+      lr += data.cases(t,u) * X(t,j) * (prop - curr)
+        - data.n[u] * (::exp(loglambda + X(t,j)*prop) - ::exp(loglambda + X(t,j)*curr));
     }
   }
   return lr;
@@ -68,10 +65,7 @@ double betax_likelihood(NumericMatrix cases,
   // sum(cases[,wch[[j]]] * X * (prop - curr) - lambda_prop + lambda_curr)
 }
 
-// [[Rcpp::export]]
-Rcpp::List update_x(NumericMatrix cases,
-                    NumericVector n,
-                    List rgmb,
+Rcpp::List update_x(const Data &data,
                     List state,
                     List prior,
                     List control) {
@@ -89,7 +83,7 @@ Rcpp::List update_x(NumericMatrix cases,
   int rejectX         = state["rejectX"];
 
   // sample X
-  IntegerMatrix X = sample_x(cases, n, fe, R, U, betaX, pX, rgmb);
+  IntegerMatrix X = sample_x(data, fe, R, U, betaX, pX);
   out["X"]  = X;
 
   // sample pX
@@ -107,7 +101,7 @@ Rcpp::List update_x(NumericMatrix cases,
        rejectX++;
     } else {
       double prior_ratio = (abetaX - 1) * (::log(proposal) - ::log(betaX[r])) - (proposal - betaX[r])*bbetaX;
-      double ap = betax_likelihood(cases, n, fe, R, U, X, rgmb[r], betaX[r], proposal, r) + prior_ratio;
+      double ap = betax_likelihood(data, fe, R, U, X, betaX[r], proposal, r) + prior_ratio;
       double un = R::unif_rand();
       if (ap >= 0 || un <= ::exp(ap)) {
         betaX[r] = proposal;

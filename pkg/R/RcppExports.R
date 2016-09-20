@@ -22,19 +22,3 @@ update <- function(data, i, state, prior, control) {
     .Call('epiclustR_update', PACKAGE = 'epiclustR', data, i, state, prior, control)
 }
 
-update_r <- function(cases, n, mbrg, i, state, prior, control) {
-    .Call('epiclustR_update_r', PACKAGE = 'epiclustR', cases, n, mbrg, i, state, prior, control)
-}
-
-sum_u_squared <- function(U, nb) {
-    .Call('epiclustR_sum_u_squared', PACKAGE = 'epiclustR', U, nb)
-}
-
-update_u <- function(cases, n, mbrg, nb, i, state, prior, control) {
-    .Call('epiclustR_update_u', PACKAGE = 'epiclustR', cases, n, mbrg, nb, i, state, prior, control)
-}
-
-update_x <- function(cases, n, rgmb, state, prior, control) {
-    .Call('epiclustR_update_x', PACKAGE = 'epiclustR', cases, n, rgmb, state, prior, control)
-}
-

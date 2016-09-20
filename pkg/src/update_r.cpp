@@ -1,5 +1,4 @@
-#include <Rcpp.h>
-#include <cmath>
+#include "update.h"
 #include "util.h"
 
 using namespace Rcpp;
@@ -13,9 +12,7 @@ double sum_r_squared(NumericVector R) {
   return sum;
 }
 
-double r_likelihood(NumericMatrix cases,
-                         NumericVector n,
-                         NumericVector mbrg,
+double r_likelihood(const Data &data,
                          double fe,
                          NumericVector R,
                          NumericVector U,
@@ -28,9 +25,9 @@ double r_likelihood(NumericMatrix cases,
   for (int u = 0; u < n_u; u++) {
     double l_u = fe + U[u];
     for (int i = 0; i < prop.length(); i++) {
-      double loglambda = l_u + X(i+j, mbrg[u]-1)*betaX[mbrg[u]-1];
-      lr += cases(i+j,u) * (prop[i] - R[i+j])
-        - n[u] * (::exp(loglambda + prop[i]) - ::exp(loglambda + R[i+j]));
+      double loglambda = l_u + X(i+j, data.mbrg[u]-1)*betaX[data.mbrg[u]-1];
+      lr += data.cases(i+j,u) * (prop[i] - R[i+j])
+        - data.n[u] * (::exp(loglambda + prop[i]) - ::exp(loglambda + R[i+j]));
     }
   }
   return lr;
@@ -40,10 +37,7 @@ inline double square_diff(double a, double b) {
   return a*a - b*b;
 }
 
-// [[Rcpp::export]]
-Rcpp::List update_r(NumericMatrix cases,
-                NumericVector n,
-                NumericVector mbrg,
+Rcpp::List update_r(const Data &data,
                 int i,
                 List state,
                 List prior,
@@ -88,7 +82,7 @@ Rcpp::List update_r(NumericMatrix cases,
       if (j < R.length()-2)
         prior_ratio += 0.5 * kR * square_diff(R[j]-2*R[j+1]+R[j+2], prop-2*R[j+1]+R[j+2]);
       proposal = prop;
-      ap = r_likelihood(cases, n, mbrg, fe, R, U, X, betaX, proposal, j) + prior_ratio;
+      ap = r_likelihood(data, fe, R, U, X, betaX, proposal, j) + prior_ratio;
     } else {
       // Conditional Prior Proposal step to update R
       if (j == 0)
@@ -110,7 +104,7 @@ Rcpp::List update_r(NumericMatrix cases,
           mu[i] = rmu(i,0)*R[j-2]+rmu(i,1)*R[j-1]+rmu(i,2)*R[j+rmu.nrow()]+rmu(i,3)*R[j+rmu.nrow()+1];
         proposal = Util::rmvnorm(mu, rsigma/::sqrt(kR));
       }
-      ap = r_likelihood(cases, n, mbrg, fe, R, U, X, betaX, proposal, j);
+      ap = r_likelihood(data, fe, R, U, X, betaX, proposal, j);
     }
     double un = R::unif_rand();
     if (ap >= 0 | un <= ::exp(ap)) {

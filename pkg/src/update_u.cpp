@@ -1,14 +1,12 @@
-#include <Rcpp.h>
+#include "update.h"
 #include "util.h"
 
 using namespace Rcpp;
 
-double u_likelihood(NumericMatrix cases,
-                         NumericVector n,
+double u_likelihood(const Data &data,
                          double fe,
                          NumericVector R,
                          IntegerMatrix X,
-                         NumericVector mbrg,
                          NumericVector betaX,
                          double curr,
                          double prop,
@@ -16,9 +14,9 @@ double u_likelihood(NumericMatrix cases,
   const int n_r = R.length();
   double lr = 0;
   for (int t = 0; t < n_r; t++) {
-    double loglambda = fe + R[t] + betaX[mbrg[u]-1] * X(t, mbrg[u]-1);
-    lr += cases(t,u) * (prop - curr)
-          - n[u] * (::exp(loglambda+prop) - ::exp(loglambda+curr));
+    double loglambda = fe + R[t] + betaX[data.mbrg[u]-1] * X(t, data.mbrg[u]-1);
+    lr += data.cases(t,u) * (prop - curr)
+          - data.n[u] * (::exp(loglambda+prop) - ::exp(loglambda+curr));
   }
   return lr;
 //  tps <- length(R)
@@ -27,8 +25,7 @@ double u_likelihood(NumericMatrix cases,
 //  sum(cases[,j] * (prop - curr) - lambda_prop + lambda_curr)
 }
 
-// [[Rcpp::export]]
-double sum_u_squared(NumericVector U, NumericMatrix nb) {
+double sum_u_squared(NumericVector U, const NumericMatrix &nb) {
   double sum = 0;
   for (int i = 0; i < U.length(); i++) {
     for (int j = 1; j < nb(i,0)+1; j++) {
@@ -39,11 +36,7 @@ double sum_u_squared(NumericVector U, NumericMatrix nb) {
   return 0.5*sum; // We divide by 2 here as the above sum will count all squared distances twice.
 }
 
-// [[Rcpp::export]]
-Rcpp::List update_u(NumericMatrix cases,
-                NumericVector n,
-                NumericVector mbrg,
-                NumericMatrix nb,
+Rcpp::List update_u(const Data &data,
                 int i,
                 List state,
                 List prior,
@@ -67,27 +60,27 @@ Rcpp::List update_u(NumericMatrix cases,
   double sigmaU = control["sigmaU"];
 
   // Gibb's step to update kU
-  kU = Util::rgamma(aU + 0.5*(U.length()-1), bU + 0.5*sum_u_squared(U, nb));
+  kU = Util::rgamma(aU + 0.5*(U.length()-1), bU + 0.5*sum_u_squared(U, data.nb));
   out["kU"] = kU;
 
   for (int u = 0; u < U.length(); u++) {
     double proposal, ap;
     if (i % 2 == 0) { // propose from the prior
       double sumU = 0;
-      for (int j = 1; j < nb(u,0) + 1; j++)
-        sumU += U[nb(u,j)-1];
+      for (int j = 1; j < data.nb(u,0) + 1; j++)
+        sumU += U[data.nb(u,j)-1];
 
-      proposal = R::rnorm(sumU/nb(u,0), 1/::sqrt(kU * nb(u,0)));
-      ap = u_likelihood(cases, n, fe, R, X, mbrg, betaX, U[u], proposal, u);
+      proposal = R::rnorm(sumU/data.nb(u,0), 1/::sqrt(kU * data.nb(u,0)));
+      ap = u_likelihood(data, fe, R, X, betaX, U[u], proposal, u);
     } else { // M-H random walk proposal
       proposal = R::rnorm(U[u], sigmaU);
       double sumU = 0;
-      for (int j = 1; j < nb(u,0) + 1; j++) {
-        double d1 = U[nb(u,j)-1] - proposal;
-        double d2 = U[nb(u,j)-1] - U[u];
+      for (int j = 1; j < data.nb(u,0) + 1; j++) {
+        double d1 = U[data.nb(u,j)-1] - proposal;
+        double d2 = U[data.nb(u,j)-1] - U[u];
         sumU += d1*d1 - d2*d2;
       }
-      ap = u_likelihood(cases, n, fe, R, X, mbrg, betaX, U[u], proposal, u) - kU * sumU / 2;
+      ap = u_likelihood(data, fe, R, X, betaX, U[u], proposal, u) - kU * sumU / 2;
     }
     double un = R::unif_rand();
     if (ap >= 0 || un <= ::exp(ap)) {
