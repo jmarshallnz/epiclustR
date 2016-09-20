@@ -284,7 +284,8 @@ ECases <- function(state, smoothed = FALSE) {
 
 # expected number of cases per time
 ExpectedCases <- function(state, smoothed = FALSE) {
-  apply(matrix(ECases(state,smoothed=smoothed),params$tps,params$mbs),1,sum)
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  return(cases_per_time(data, state, smoothed))
 }
 
 # This *SEEMS* to be independent of model state etc.

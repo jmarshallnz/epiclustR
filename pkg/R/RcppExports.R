@@ -12,6 +12,17 @@ expected_cases <- function(data, state, smoothed = FALSE) {
     .Call('epiclustR_expected_cases', PACKAGE = 'epiclustR', data, state, smoothed)
 }
 
+#' Compute expected cases over time
+#'
+#' @param data a list containing the data
+#' @param state the current state of the Markov chain
+#' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+#' @return a matrix containing the expected cases in time and space
+#' @export
+cases_per_time <- function(data, state, smoothed = FALSE) {
+    .Call('epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed)
+}
+
 rbernoulli <- function(p) {
     .Call('epiclustR_rbernoulli', PACKAGE = 'epiclustR', p)
 }

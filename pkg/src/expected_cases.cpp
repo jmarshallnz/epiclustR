@@ -45,3 +45,20 @@ Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed = false)
 
   return e;
 }
+
+//' Compute expected cases over time
+//'
+//' @param data a list containing the data
+//' @param state the current state of the Markov chain
+//' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+//' @return a matrix containing the expected cases in time and space
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector cases_per_time(List data, List state, bool smoothed = false) {
+  NumericMatrix cases = expected_cases(data, state, smoothed);
+  NumericVector out = no_init(cases.nrow());
+  for (int i = 0; i < cases.nrow(); i++) {
+    out[i] = sum(cases(i,_));
+  }
+  return out;
+}
