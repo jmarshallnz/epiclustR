@@ -278,15 +278,8 @@ Deviance <- function(state) {
 
 # expected cases per time and space
 ECases <- function(state, smoothed = FALSE) {
-  output<-rep(state$fe, params$tps*params$mbs)
-  if (params$incR) { output <- output + RRisk(state) }
-  if (params$incS && !smoothed) { output <- output + SRisk() }
-  if (params$incU) { output <- output + URisk(state) }
-  if (params$incV) { output <- output + VRisk() }
-  if (params$incW) { output <- output + WRisk() }
-  if (params$incX && !smoothed) { output<-output + XRisk(state) }
-  if (params$incB) { output <- output + BRisk() }
-  return(rep(n, each=params$tps)*exp(output))
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  return(expected_cases(data, state, smoothed))
 }
 
 # expected number of cases per time

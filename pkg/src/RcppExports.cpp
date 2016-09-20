@@ -5,6 +5,19 @@
 
 using namespace Rcpp;
 
+// expected_cases
+Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed);
+RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< List >::type state(stateSEXP);
+    Rcpp::traits::input_parameter< bool >::type smoothed(smoothedSEXP);
+    __result = Rcpp::wrap(expected_cases(data, state, smoothed));
+    return __result;
+END_RCPP
+}
 // rbernoulli
 int rbernoulli(double p);
 RcppExport SEXP epiclustR_rbernoulli(SEXP pSEXP) {
