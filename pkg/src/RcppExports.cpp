@@ -5,6 +5,18 @@
 
 using namespace Rcpp;
 
+// deviance
+double deviance(List data, List state);
+RcppExport SEXP epiclustR_deviance(SEXP dataSEXP, SEXP stateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< List >::type state(stateSEXP);
+    __result = Rcpp::wrap(deviance(data, state));
+    return __result;
+END_RCPP
+}
 // expected_cases
 Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed);
 RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP) {

@@ -273,7 +273,8 @@ InitAcceptance <- function(state) {
 }
 
 Deviance <- function(state) {
-  sum(-2*log(dpois(cases[,],ECases(state))))-params$baseDeviance
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  deviance(data, state) - params$baseDeviance
 }
 
 # expected cases per time and space
