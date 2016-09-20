@@ -22,10 +22,11 @@ Rcpp::List update(List data,
 
   // setup our objects
   Data d(data);
+  State s(state);
 
-  List s = state;
-  s = update_r(d.cases, d.n, d.mbrg, i, s, prior, control);
-  s = update_u(d.cases, d.n, d.mbrg, d.nb, i, s, prior, control);
-  s = update_x(d.cases, d.n, d.rgmb, s, prior, control);
-  return s;
+  update_r(d, i, s, prior, control);
+  update_u(d, i, s, prior, control);
+  update_x(d, s, prior, control);
+
+  return s.toList(state);
 }

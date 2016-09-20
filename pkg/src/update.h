@@ -2,20 +2,21 @@
 
 #include <Rcpp.h>
 #include "data.h"
+#include "state.h"
 
-Rcpp::List update_r(const Data &data,
+void update_r(const Data &data,
                     int i,
-                    Rcpp::List state,
+                    State &state,
                     Rcpp::List prior,
                     Rcpp::List control);
 
-Rcpp::List update_u(const Data &data,
+void update_u(const Data &data,
                     int i,
-                    Rcpp::List state,
+                    State &state,
                     Rcpp::List prior,
                     Rcpp::List control);
 
-Rcpp::List update_x(const Data &data,
-                    Rcpp::List state,
+void update_x(const Data &data,
+                    State &state,
                     Rcpp::List prior,
                     Rcpp::List control);
