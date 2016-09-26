@@ -54,7 +54,7 @@ RInitialize <- function() {
   if (params$tidyup) {file.remove(file.path(params$outpath, "acceptanceR.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "sumR.txt"))}
 
-  state <- list(R  = matrix(rnorm(params$tps,0,1),1,params$tps),
+  state <- list(R  = rnorm(params$tps,0,1),
                 kR = 1,
                 fe = -10,
                 acceptR = matrix(0,1+length(Rblock),1),

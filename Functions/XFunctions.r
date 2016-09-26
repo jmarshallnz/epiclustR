@@ -64,13 +64,13 @@ XInitialise <- function() {
     XUpdate<<-XUpdate1
   } else if (Xmode==2) {
     if (params$tidyup) {file.remove(file.path(params$outpath, "betaXconditional.txt"))}
-    betaX <- matrix(0.2,1,rgs)
+    betaX <- rep(0.2,rgs)
     sigmaX<<-1
     XUpdate<<-XUpdate2
     XRisk<<-XRisk2
   } else if (Xmode==3 | Xmode==4) {
     if (params$tidyup) {file.remove(file.path(params$outpath, "betaXconditional.txt"))}
-    betaX <- matrix(0.2,1,rgs)
+    betaX <- rep(0.2,rgs)
     sigmaX<<-1
     abetaX<<-1
     bbetaX<<-1
