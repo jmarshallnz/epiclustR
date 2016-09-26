@@ -23,7 +23,7 @@ params$outpath    <- "MidCentral/current_version"
 sigmaR<-1
 
 # TODO: Initialize currently loads the data. This needs to be changed
-state <- Initialise("MidCentral")
+state <- Initialise("MidCentral", setpriors = 2)
 
 RLikelihood<-RLikelihoodRUX2
 ULikelihood<-ULikelihoodRUX2

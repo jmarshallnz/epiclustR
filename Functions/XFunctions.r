@@ -23,8 +23,8 @@ XSetPriors <- function(setpriors) {
     abetaX<<-1
     bbetaX<<-1
   } else if (setpriors==2) {
-    aX<<-2
-    bX<<-102
+    aX<<-1    # was 2
+    bX<<-51   # was 102
     abetaX<<-1
     bbetaX<<-1
   } else if (setpriors==3) {
