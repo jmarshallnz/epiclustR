@@ -421,7 +421,11 @@ XSample <- function(state) {
     cat(state$cumX,"\n",file=file.path(params$outpath, "cumulativeX.txt"))
   }
   if (XFullOutput) {
-    cat(state$X,"\n",file=file.path(params$outpath, "fullX.txt"),append=TRUE)
+    out <- character(ncol(state$X))
+    for (i in 1:ncol(state$X)) {
+      out[i] <- paste(state$X[,i], collapse="")
+    }
+    cat(out,"\n",file=file.path(params$outpath, "fullX.txt"),append=TRUE)
   }
 }
 
