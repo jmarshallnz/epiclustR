@@ -30,6 +30,8 @@ ULikelihood<-ULikelihoodRUX2
 XLikelihood<-XLikelihoodRUX2
 betaXLikelihood<-betaXLikelihoodRUX2
 
+XFullOutput <- TRUE
+
 # burnin and samples are in terms of posterior samples
 control <- list(thinning = 5, samples = 100, burnin = 2)
 
