@@ -16,29 +16,35 @@ eigen_scale <- function(A) {
   eig$vectors %*% diag(sqrt(pmax(eig$values,0)))
 }
 
+R_covariance_matrix <- function(n) {
+  # Generates the structure matrix for a random walk of order 2
+  K<-6*diag(2 + n + 2) # need 2 on either side for ends
+  for (j in 1:nrow(K)) {
+    if (j>2) {K[j,j-2]<-1}
+    if (j>1) {K[j,j-1]<--4}
+    if (j+1<=ncol(K)) {K[j,j+1]<--4}
+    if (j+2<=ncol(K)) {K[j,j+2]<-1}
+  }
+  K[1,1:2] <- K[n+4,n+4:3] <- c(1, -2)
+  K[2,1:2] <- K[n+3,n+4:3] <- c(-2, 5)
+  K
+}
+
 RInitialize <- function() {
   Rsigma<<-list()
   Rsigma_eigen<<-list()
   Rbefore<<-list()
   Rafter<<-list()
   for (i in 1:length(Rblock)) {
-    K<-6*diag(Rblock[i])#Structure matrix for R
-    for (j in 1:Rblock[i]) {
-      if (j>2) {K[j,j-2]<-1}
-      if (j>1) {K[j,j-1]<--4}
-      if (j<Rblock[i]) {K[j,j+1]<--4}
-      if (j<Rblock[i]-1) {K[j,j+2]<-1}
-    }
-    Rsigma[[i]]<<-solve(K)
+    o <- 2 # offset
+    K <- R_covariance_matrix(Rblock[i])
+    invK <- solve(K[1:Rblock[i]+o, 1:Rblock[i]+o])
+    Rsigma[[i]]<<- invK
     Rsigma_eigen[[i]]<<-eigen_scale(Rsigma[[i]])
-    Kbef <- matrix(0, Rblock[i], 2)
-    Kaft <- matrix(0, Rblock[i], 2)
-    Kbef[1,1:2] <- c(1, -4)
-    Kbef[2,2]   <- 1
-    Kaft[Rblock[i]-1,1] <- 1
-    Kaft[Rblock[i],1:2] <- c(-4, 1)
-    Rbefore[[i]] <<- -Rsigma[[i]] %*% Kbef
-    Rafter[[i]] <<-  -Rsigma[[i]] %*% Kaft
+    Kbef <- K[1:Rblock[i]+o,seq_len(min(o,2))+max(o,2)-2, drop=FALSE]
+    Kaft <- K[1:Rblock[i]+o,o + Rblock[i] + seq_len(min(4-o,2)), drop=FALSE]
+    Rbefore[[i]] <<- -invK %*% Kbef
+    Rafter[[i]] <<-  -invK %*% Kaft
   }
 
   if (params$tidyup) {file.remove(file.path(params$outpath, "R.txt"))}
