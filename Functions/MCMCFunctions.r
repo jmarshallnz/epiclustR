@@ -289,6 +289,68 @@ ExpectedCases <- function(state, smoothed = FALSE) {
   return(cases_per_time(data, state, smoothed))
 }
 
+# ess computation taken from rstan
+ess <- function(x) {
+  if (is.vector(x)) {
+    dim(x) <- c(length(x), 1)
+  }
+  chains    <- ncol(x)
+  n_samples <- nrow(x)
+  acov <- lapply(1:chains, function(i) {
+                             c <- acf(x[,i], lag.max = n_samples - 1, plot=FALSE, type='covariance')
+                             c$acf[,,1]
+                           })
+  acov <- do.call(cbind, acov)
+  means <- apply(x, 2, mean)
+  mean_var <- mean(acov[1,]) * n_samples / (n_samples - 1)
+  var_plus <- mean_var * (n_samples - 1) / n_samples;
+  if (chains > 1)
+    var_plus <- var_plus + var(means)
+  rho_hat_sum <- 0
+  for (t in 2:nrow(acov)) {
+    rho_hat <- 1 - (mean_var - mean(acov[t, ])) / var_plus
+    if (is.nan(rho_hat)) rho_hat <- 0
+    if (rho_hat < 0) break
+    rho_hat_sum <- rho_hat_sum + rho_hat
+  }
+  ess <- chains * n_samples
+  if (rho_hat_sum > 0) ess <- ess / (1 + 2 * rho_hat_sum)
+  ess
+}
+
+ReadSamples <- function(mcmc_path) {
+  # read in R
+  R <- read.table(file.path(mcmc_path, "R.txt"))
+  U <- read.table(file.path(mcmc_path, "U.txt"))
+  fe <- read.table(file.path(mcmc_path, "fixedEffects.txt"))
+  kR <- read.table(file.path(mcmc_path, "kR.txt"))
+  kU <- read.table(file.path(mcmc_path, "kU.txt"))
+  betaX <- read.table(file.path(mcmc_path, "betaX.txt"))
+  ecases <- read.table(file.path(mcmc_path, "expectedCases.txt"))
+  scases <- read.table(file.path(mcmc_path, "smoothedCases.txt"))
+  X <- read.table(file.path(mcmc_path, "fullX.txt"), colClasses='character')
+  foo <- function(x) {
+    d <- nchar(x)
+    as.integer(unlist(lapply(1:d, function(s) substr(x, d, d))))
+  }
+  Xbar <- simplify2array(lapply(seq_len(nrow(X)), function(i) { simplify2array(lapply(X[i,], foo)) } ))
+  summary(apply(R, 2, ess))
+  summary(apply(U, 2, ess))
+  # TODO: Save cumX as a matrix
+  cumX  <- as.numeric(read.table(file.path(mcmc_path, "cumulativeX.txt"))) # fixme
+  cumX <- matrix(cumX, 75)
+  image(x=1:75, y=1:312, z=cumX)
+  mu_ecases <- apply(ecases, 2, median)
+  mu_scases <- apply(scases, 2, median)
+  plot(mu_ecases, type='l')
+  lines(mu_scases, col='red')
+  sumU <- read.table(file.path(mcmc_path, "sumU.txt"))
+  plot(sumU[,1] ~ kU[,1])
+  plot(density(fe[,1]))
+  plot(density(R[,20]))
+  acf(R[,20])
+}
+
 # This *SEEMS* to be independent of model state etc.
 plotPairs<-function(variable,components=1,posteriors=TRUE,zeroCentre=FALSE,halfCentre=FALSE,useDataCentre=FALSE,matched=TRUE) {
   input <- -1
