@@ -21,10 +21,10 @@ class State {
 
     State(Rcpp::List s) :
       fe(Rcpp::as<double>(s["fe"])),
-      R(Rcpp::as<Rcpp::NumericVector>(s["R"])),
-      U(Rcpp::as<Rcpp::NumericVector>(s["U"])),
-      X(Rcpp::as<Rcpp::IntegerMatrix>(s["X"])),
-      betaX(Rcpp::as<Rcpp::NumericVector>(s["betaX"])),
+      R(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["R"]))),
+      U(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["U"]))),
+      X(Rcpp::clone(Rcpp::as<Rcpp::IntegerMatrix>(s["X"]))),
+      betaX(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["betaX"]))),
       kR(Rcpp::as<double>(s["kR"])),
       kU(Rcpp::as<double>(s["kU"])),
       pX(Rcpp::as<double>(s["pX"])),
