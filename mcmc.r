@@ -34,12 +34,12 @@ betaXLikelihood<-betaXLikelihoodRUX2
 control <- list(thinning = 5, samples = 100, burnin = 2)
 
 print(system.time({
-for (i in 1:control$burnin) {
+for (i in seq_len(control$burnin)) {
   state <- Update(state, control, burnin=TRUE)
   state <- InitAcceptance(state)
   cat("burnin sample:", i, "of", control$burnin, "\n")
 }
-for (i in 1:control$samples) {
+for (i in seq_len(control$samples)) {
   state <- Update(state, control)
   Sample(state)
   state <- InitAcceptance(state)
