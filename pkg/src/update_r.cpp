@@ -42,20 +42,21 @@ void update_r(const Data &data,
   double aR = prior["aR"];
   double bR = prior["bR"];
   double sigmaR = control["sigmaR"];
-  List Rmu      = control["Rmu"];
+  List Rbefore  = control["Rbefore"];
+  List Rafter   = control["Rafter"];
   List Rsigma   = control["Rsigma"];
 
   // Gibbs update for kR
   s.kR = Util::rgamma(aR + 0.5*(s.R.length()-2), bR+0.5*sum_r_squared(s.R));
 
-  int method = i % (1+Rmu.size());
+  int method = i % (1+Rbefore.size());
   int endmethod = Util::rbernoulli(0.5);
 
   int j = 0; // start of update block
   while (j < s.R.length()) {
     NumericVector proposal;
     double ap;
-    if (method >= Rmu.size() || (endmethod == 0 && (j < 2 || j > s.R.length()-3))) {
+    if (method >= Rbefore.size() || (endmethod == 0 && (j < 2 || j > s.R.length()-3))) {
       // Metropolis Hastings proposal step to update R.
       double prop = R::rnorm(s.R[j], sigmaR);
       double prior_ratio = 0;
@@ -82,14 +83,21 @@ void update_r(const Data &data,
       else if (j == s.R.length() - 1)
         proposal = R::rnorm(-s.R[j-2]+2*s.R[j-1], ::sqrt(1/s.kR));
       else {
-        NumericMatrix rmu = Rmu[method];
+        NumericMatrix rbe = Rbefore[method];
+        NumericMatrix raf = Rafter[method];
         NumericMatrix rsigma = Rsigma[method];
-        if (j + rmu.nrow() > s.R.length() - 2) {
-          j = s.R.length() - 2 - rmu.nrow();
+        if (j + rbe.nrow() > s.R.length() - 2) { // TODO: This will change once we can block update R[max]
+          j = s.R.length() - 2 - rbe.nrow();
         }
-        NumericVector mu = no_init(rmu.nrow());
-        for (int i = 0; i < mu.length(); i++)
-          mu[i] = rmu(i,0)*s.R[j-2]+rmu(i,1)*s.R[j-1]+rmu(i,2)*s.R[j+rmu.nrow()]+rmu(i,3)*s.R[j+rmu.nrow()+1];
+        NumericVector mu(rbe.nrow());
+        for (int i = 0; i < mu.length(); i++) {
+          for (int l = 0; l < rbe.ncol(); l++) {
+            mu[i] += rbe(i,l) * s.R[j - rbe.ncol() + l];
+          }
+          for (int l = 0; l < raf.ncol(); l++) {
+            mu[i] += raf(i,l) * s.R[j + raf.nrow() + l];
+          }
+        }
         proposal = Util::rmvnorm(mu, rsigma/::sqrt(s.kR));
       }
       ap = r_likelihood(data, s, proposal, j);

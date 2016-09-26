@@ -19,7 +19,8 @@ eigen_scale <- function(A) {
 RInitialize <- function() {
   Rsigma<<-list()
   Rsigma_eigen<<-list()
-  Rmu<<-list()
+  Rbefore<<-list()
+  Rafter<<-list()
   for (i in 1:length(Rblock)) {
     K<-6*diag(Rblock[i])#Structure matrix for R
     for (j in 1:Rblock[i]) {
@@ -30,15 +31,14 @@ RInitialize <- function() {
     }
     Rsigma[[i]]<<-solve(K)
     Rsigma_eigen[[i]]<<-eigen_scale(Rsigma[[i]])
-    t1<-matrix(0,Rblock[i],1)
-    t2<-matrix(0,Rblock[i],1)
-    t3<-matrix(0,Rblock[i],1)
-    t4<-matrix(0,Rblock[i],1)
-    t1[1]<-1
-    t2[1:2]<-c(-4,1)
-    t3[(Rblock[i]-1):Rblock[i]]<-c(1,-4)
-    t4[Rblock[i]]<-1
-    Rmu[[i]]<<-cbind(-Rsigma[[i]]%*%t1,-Rsigma[[i]]%*%t2,-Rsigma[[i]]%*%t3,-Rsigma[[i]]%*%t4)
+    Kbef <- matrix(0, Rblock[i], 2)
+    Kaft <- matrix(0, Rblock[i], 2)
+    Kbef[1,1:2] <- c(1, -4)
+    Kbef[2,2]   <- 1
+    Kaft[Rblock[i]-1,1] <- 1
+    Kaft[Rblock[i],1:2] <- c(-4, 1)
+    Rbefore[[i]] <<- -Rsigma[[i]] %*% Kbef
+    Rafter[[i]] <<-  -Rsigma[[i]] %*% Kaft
   }
 
   if (params$tidyup) {file.remove(file.path(params$outpath, "R.txt"))}
@@ -74,7 +74,7 @@ Update <- function(state, control, burnin = FALSE) {
                 aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
 
   # transfer the control of proposals
-  proposal <- list(sigmaR=sigmaR, Rmu=Rmu, Rsigma=Rsigma_eigen,
+  proposal <- list(sigmaR=sigmaR, Rbefore=Rbefore, Rafter=Rafter, Rsigma=Rsigma_eigen,
                    sigmaU=sigmaU,
                    sigmaX=sigmaX)
 
