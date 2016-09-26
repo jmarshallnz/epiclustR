@@ -45,18 +45,19 @@ void update_r(const Data &data,
   List Rbefore  = control["Rbefore"];
   List Rafter   = control["Rafter"];
   List Rsigma   = control["Rsigma"];
+  int max_methods = Rbefore.size() / 5;
 
   // Gibbs update for kR
   s.kR = Util::rgamma(aR + 0.5*(s.R.length()-2), bR+0.5*sum_r_squared(s.R));
 
-  int method = i % (1+Rbefore.size());
+  int method = i % (1+max_methods);
   int endmethod = Util::rbernoulli(0.5);
 
   int j = 0; // start of update block
   while (j < s.R.length()) {
     NumericVector proposal;
     double ap;
-    if (method >= Rbefore.size() || (endmethod == 0 && (j < 2 || j > s.R.length()-3))) {
+    if (method >= max_methods || (endmethod == 0 && (j < 2 || j > s.R.length()-3))) {
       // Metropolis Hastings proposal step to update R.
       double prop = R::rnorm(s.R[j], sigmaR);
       double prior_ratio = 0;
@@ -83,9 +84,10 @@ void update_r(const Data &data,
       else if (j == s.R.length() - 1)
         proposal = R::rnorm(-s.R[j-2]+2*s.R[j-1], ::sqrt(1/s.kR));
       else {
-        NumericMatrix rbe = Rbefore[method];
-        NumericMatrix raf = Rafter[method];
-        NumericMatrix rsigma = Rsigma[method];
+        int o = 2; // default method for j > 2
+        NumericMatrix rbe = Rbefore[method*5 + o]; // 2 is the default offset.
+        NumericMatrix raf = Rafter[method*5 + o];
+        NumericMatrix rsigma = Rsigma[method*5 + o];
         if (j + rbe.nrow() > s.R.length() - 2) { // TODO: This will change once we can block update R[max]
           j = s.R.length() - 2 - rbe.nrow();
         }

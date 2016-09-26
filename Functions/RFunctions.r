@@ -36,15 +36,17 @@ RInitialize <- function() {
   Rbefore<<-list()
   Rafter<<-list()
   for (i in 1:length(Rblock)) {
-    o <- 2 # offset
-    K <- R_covariance_matrix(Rblock[i])
-    invK <- solve(K[1:Rblock[i]+o, 1:Rblock[i]+o])
-    Rsigma[[i]]<<- invK
-    Rsigma_eigen[[i]]<<-eigen_scale(Rsigma[[i]])
-    Kbef <- K[1:Rblock[i]+o,seq_len(min(o,2))+max(o,2)-2, drop=FALSE]
-    Kaft <- K[1:Rblock[i]+o,o + Rblock[i] + seq_len(min(4-o,2)), drop=FALSE]
-    Rbefore[[i]] <<- -invK %*% Kbef
-    Rafter[[i]] <<-  -invK %*% Kaft
+    for (o in 0:4) { # offset
+      co <- 5*(i-1)+o+1
+      K <- R_covariance_matrix(Rblock[i])
+      invK <- solve(K[1:Rblock[i]+o, 1:Rblock[i]+o])
+      Rsigma[[co]]<<- invK
+      Rsigma_eigen[[co]]<<-eigen_scale(invK)
+      Kbef <- K[1:Rblock[i]+o,seq_len(min(o,2))+max(o,2)-2, drop=FALSE]
+      Kaft <- K[1:Rblock[i]+o,o + Rblock[i] + seq_len(min(4-o,2)), drop=FALSE]
+      Rbefore[[co]] <<- -invK %*% Kbef
+      Rafter[[co]] <<-  -invK %*% Kaft
+    }
   }
 
   if (params$tidyup) {file.remove(file.path(params$outpath, "R.txt"))}
