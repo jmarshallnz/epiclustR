@@ -41,15 +41,32 @@ for (i in seq_len(control$burnin)) {
   state <- InitAcceptance(state)
   cat("burnin sample:", i, "of", control$burnin, "\n")
 }
+posterior <- list()
 for (i in seq_len(control$samples)) {
   state <- Update(state, control)
-  Sample(state)
+  posterior[[i]] <- state
   state <- InitAcceptance(state)
   cat("posterior sample:", i, "of", control$samples, "\n")
 #  cat(file=outputfile, "iteration:", i, "\n")
 }
 }))
-#Convergence(state)
+
+extract_variable <- function(x, variable) {
+  x[[variable]]
+}
+# now dump out our posterior
+R = simplify2array(lapply(posterior, extract_variable, 'R'))
+U = simplify2array(lapply(posterior, extract_variable, 'U'))
+betaX = simplify2array(lapply(posterior, extract_variable, 'betaX'))
+fe = simplify2array(lapply(posterior, extract_variable, 'fe'))
+kR = simplify2array(lapply(posterior, extract_variable, 'kR'))
+kU = simplify2array(lapply(posterior, extract_variable, 'kU'))
+X = simplify2array(lapply(posterior, extract_variable, 'X'))
+
+write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
+write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)
+write.table(t(betaX), 'MidCentral/current_version/betaX.txt', row.names=FALSE, col.names=FALSE)
+write.table(t(fe), 'MidCentral/current_version/fixedEffects.txt', row.names=FALSE, col.names=FALSE)
 
 compare_var <- function(variable) {
   ref <- scan(file.path('MidCentral/RUX2_region2', paste0(variable, '.txt')))
@@ -62,6 +79,6 @@ compare_var('fixedEffects')
 compare_var('R')
 compare_var('U')
 compare_var('betaX')
-compare_var('cumulativeX')
-compare_var('expectedCases')
-compare_var('smoothedCases')
+#compare_var('cumulativeX')
+#compare_var('expectedCases')
+#compare_var('smoothedCases')
