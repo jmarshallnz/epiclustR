@@ -50,7 +50,6 @@ XInitialise <- function() {
   }
   pX <- 0.1
   X <- matrix(rbinom(tps*rgs,1,pX),tps,rgs)  
-  cumX <- matrix(0,tps,rgs)
   if (Xmode==0) {
     betaX <- 0.2
     sigmaX<<-0.2
@@ -90,7 +89,6 @@ XInitialise <- function() {
   }
   state <- list(X = X,
                 pX = pX,
-                cumX = cumX,
                 betaX = betaX,
                 acceptX = acceptX,
                 rejectX = rejectX)
@@ -120,14 +118,6 @@ XUpdate0 <- function(i=0, state) {
   } else {
     rejectX<-rejectX+1
   }
-  # TODO: Ideally we'd remove this. Problem is full X is large to save
-  #       in terms of the posterior, and if we want it right we have
-  #       to get rid of the burnin period.
-  #       I guess saving X to a binary file might be way more efficient
-  #       though? About 16 times smaller.
-  if (i>params$burnin) {
-    state$cumX<-state$cumX+X
-  }
   state$betaX <- betaX
   state$acceptX <- acceptX
   state$rejectX <- rejectX
@@ -154,14 +144,6 @@ XUpdate1 <- function(i=0, state) {
     acceptX<-acceptX+1
   } else {
     rejectX<-rejectX+1
-  }   
-  # TODO: Ideally we'd remove this. Problem is full X is large to save
-  #       in terms of the posterior, and if we want it right we have
-  #       to get rid of the burnin period.
-  #       I guess saving X to a binary file might be way more efficient
-  #       though? About 16 times smaller.
-  if (i>params$burnin) {
-    state$cumX<-state$cumX+X
   }
   state$pX <- pX
   state$betaX <- betaX
@@ -174,14 +156,6 @@ XUpdate2 <- function(i=0, state) {
   # Call straight into c-land
   state <- update_x(cases, n, wch, state, list(aX=aX, bX=bX, sigmaX=sigmaX, abetaX=abetaX, bbetaX=bbetaX))
 
-  # TODO: Ideally we'd remove this. Problem is full X is large to save
-  #       in terms of the posterior, and if we want it right we have
-  #       to get rid of the burnin period.
-  #       I guess saving X to a binary file might be way more efficient
-  #       though? About 16 times smaller.
-  if (i>params$burnin) {
-    state$cumX<-state$cumX+state$X
-  }
   return(state)
 }
 
@@ -216,14 +190,6 @@ XUpdate3 <- function(i=0, state) {
         rejectX<-rejectX+1
       }
     }
-  }
-  # TODO: Ideally we'd remove this. Problem is full X is large to save
-  #       in terms of the posterior, and if we want it right we have
-  #       to get rid of the burnin period.
-  #       I guess saving X to a binary file might be way more efficient
-  #       though? About 16 times smaller.
-  if (i>params$burnin) {
-    state$cumX<-state$cumX+X
   }
   state$betaX <- betaX
   state$acceptX <- acceptX
@@ -418,7 +384,6 @@ XSample <- function(state) {
   cat(state$acceptX/(state$acceptX+state$rejectX),"\n",file=file.path(params$outpath, "acceptanceX.txt"),append=TRUE)
   if (XOutput) {
     cat(state$X,"\n",file=file.path(params$outpath, "X.txt"))
-    cat(state$cumX,"\n",file=file.path(params$outpath, "cumulativeX.txt"))
   }
   if (XFullOutput) {
     out <- character(ncol(state$X))
@@ -473,6 +438,4 @@ XContinue <- function() {
   pX<<-Upload("pX",1)
   X<<-scan("X.txt")
   X<<-matrix(X,params$tps,params$rgs)
-  cumX<<-scan("cumulativeX.txt")
-  cumX<<-matrix(cumX,params$tps,params$rgs)
 }

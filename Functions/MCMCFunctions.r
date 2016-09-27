@@ -360,10 +360,6 @@ ReadSamples <- function(mcmc_path) {
   Xbar <- simplify2array(lapply(seq_len(nrow(X)), function(i) { simplify2array(lapply(X[i,], foo)) } ))
   summary(apply(R, 2, ess))
   summary(apply(U, 2, ess))
-  # TODO: Save cumX as a matrix
-  cumX  <- as.numeric(read.table(file.path(mcmc_path, "cumulativeX.txt"))) # fixme
-  cumX <- matrix(cumX, 75)
-  image(x=1:75, y=1:312, z=cumX)
   mu_ecases <- apply(ecases, 2, median)
   mu_ecases_h <- apply(ecases, 2, quantile, 0.975)
   mu_ecases_l <- apply(ecases, 2, quantile, 0.025)
