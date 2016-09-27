@@ -70,44 +70,30 @@ void update_r(const Data &data,
       proposal = prop;
       ap = r_likelihood(data, s, proposal, j) + prior_ratio;
     } else {
-      // Conditional Prior Proposal step to update R
-/*      if (j == 0)
-        proposal = R::rnorm(2*s.R[1]-s.R[2], ::sqrt(1/s.kR));
-      else if (j == 1)
-        proposal = R::rnorm(0.4*s.R[0]+0.8*s.R[2]-0.2*s.R[3], ::sqrt(0.2/s.kR));
-      else if (j == s.R.length() - 2) {
-        // this case, and the above are derived from R[j] = 2R[j-1] - R[j-2]
-        // combined with twice (for some reason)    2R[j] = R[j+1] + R[j-1]
-        // resulting in                             5R[j] = 4R[j-1] + 2R[j+1] - R[j-2]
-        proposal = R::rnorm(-0.2*s.R[j-2]+0.8*s.R[j-1]+0.4*s.R[j+1], ::sqrt(0.2/s.kR));
+      // Conditional Blocked Prior Proposal step to update R
+      // first check if we're going to hit the end
+      int size = as<NumericMatrix>(Rbefore[method*5]).nrow();
+      if (j + size > s.R.length()) { // hit the end, so shuffle down a bit
+        j = s.R.length() - size;
       }
-      else if (j == s.R.length() - 1)
-        proposal = R::rnorm(-s.R[j-2]+2*s.R[j-1], ::sqrt(1/s.kR));
-      else */{
-        // first check if we're going to hit the end
-        int size = as<NumericMatrix>(Rbefore[method*5]).nrow();
-        if (j + size > s.R.length()) { // hit the end, so shuffle down a bit
-          j = s.R.length() - size;
+      // now work out the appropriate method. We use 2 unless we're at the ends
+      int o = 2; // default method for j > 2
+      if (j < 2) o = j;
+      if (j + size > s.R.length() - 2) o = 4 - (s.R.length() - (j + size));
+      NumericMatrix rbe = Rbefore[method*5 + o];
+      NumericMatrix raf = Rafter[method*5 + o];
+      NumericMatrix rsigma = Rsigma[method*5 + o];
+      NumericVector mu(rbe.nrow());
+      for (int i = 0; i < mu.length(); i++) {
+        for (int l = 0; l < rbe.ncol(); l++) {
+          mu[i] += rbe(i,l) * s.R[j - rbe.ncol() + l];
         }
-        // now work out the appropriate method. We use 2 unless we're at the ends
-        int o = 2; // default method for j > 2
-        if (j < 2) o = j;
-        if (j + size > s.R.length() - 2) o = 4 - (s.R.length() - (j + size));
-        NumericMatrix rbe = Rbefore[method*5 + o];
-        NumericMatrix raf = Rafter[method*5 + o];
-        NumericMatrix rsigma = Rsigma[method*5 + o];
-        NumericVector mu(rbe.nrow());
-        for (int i = 0; i < mu.length(); i++) {
-          for (int l = 0; l < rbe.ncol(); l++) {
-            mu[i] += rbe(i,l) * s.R[j - rbe.ncol() + l];
-          }
-          for (int l = 0; l < raf.ncol(); l++) {
-            mu[i] += raf(i,l) * s.R[j + raf.nrow() + l];
-          }
+        for (int l = 0; l < raf.ncol(); l++) {
+          mu[i] += raf(i,l) * s.R[j + raf.nrow() + l];
         }
-        proposal = Util::rmvnorm(mu, rsigma/::sqrt(s.kR));
       }
-      ap = r_likelihood(data, s, proposal, j);
+      proposal = Util::rmvnorm(mu, rsigma/::sqrt(s.kR));
+      ap = r_likelihood(data, s, proposal, j); // prior ratio and proposal ratio cancel
     }
     double un = R::unif_rand();
     if (ap >= 0 | un <= ::exp(ap)) {
