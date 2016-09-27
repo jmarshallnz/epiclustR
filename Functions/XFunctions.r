@@ -464,64 +464,6 @@ XConvergence <- function(state) {
     write.table(t(rr),file.path(params$outpath, "relativeriskbetaXconditional.txt"),row.names=F,col.names=F)
   }
 }
-XAnalysis <- function() {
-  tps <- nrow(X)
-  rgs <- ncol(X)
-
-  plot(1:tps,t="n",xlab="week",ylab="X",main="Epidemic Analysis",xlim=c(1,tps),ylim=c(0,1))
-  for (i in 1:rgs) {
-    lines(1:tps,cumX[,i]/(iters-burnin)*samplefreq)
-  }
-  for (i in 1:rgs) {
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]==1)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)==1)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="darkgreen",pch=20,cex=0.75)
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]==2)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)==2)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="orange",pch=20,cex=0.75)
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]>2)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)>2)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="darkred",pch=20,cex=0.75)
-  }
-  X<<-cumX/(iters-burnin)*samplefreq
-  write.table(t(X),file.path(params$outpath, "posteriorX.txt"),row.names=F,col.names=F)
-}
-XAnalysis2 <- function() {
-  tps <- nrow(X)
-  rgs <- ncol(X)
-
-  par(mfrow=c(3,4))
-  for (i in 1:rgs) {
-    plot(1:tps,cumX[,i]/(iters-burnin)*samplefreq,t="l",xlab="week",ylab="X",main=paste("X",i),xlim=c(1,tps),ylim=c(0,1))
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]==1)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)==1)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="darkgreen",pch=20,cex=0.75)
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]==2)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)==2)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="orange",pch=20,cex=0.75)
-    if (lwch[i]==1) {
-      casealert<-which(cases[,wch[[i]]]>2)
-    } else {
-      casealert<-which(apply(cases[,wch[[i]]],1,sum)>2)
-    }
-    points(casealert,cumX[casealert,i]/(iters-burnin)*samplefreq,col="darkred",pch=20,cex=0.75)
-  }
-}
 XContinue <- function() {
   if (params$Xmode<2) {
     betaX<<-Upload("betaX",1)
