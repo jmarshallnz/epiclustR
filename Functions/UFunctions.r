@@ -7,8 +7,8 @@ UInitialize <- function() {
   if (params$tidyup) {file.remove(file.path(params$outpath, "acceptanceU.txt"))}
   if (params$tidyup) {file.remove(file.path(params$outpath, "sumU.txt"))}
 
-  state <- list(acceptU = matrix(0,2,1),
-                rejectU = matrix(0,2,1),
+  state <- list(acceptU = rep(0,2),
+                rejectU = rep(0,2),
                 kU = 1,
                 U = rnorm(params$mbs,0,1))
   return(state)

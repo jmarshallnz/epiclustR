@@ -57,8 +57,8 @@ RInitialize <- function() {
   state <- list(R  = rnorm(params$tps,0,1),
                 kR = 1,
                 fe = -10,
-                acceptR = matrix(0,1+length(Rblock),1),
-                rejectR = matrix(0,1+length(Rblock),1))
+                acceptR = rep(0, 1+length(Rblock)),
+                rejectR = rep(0, 1+length(Rblock)))
   return(state)
 }
 
@@ -166,8 +166,8 @@ RSample <- function(state) {
 }
 
 RInitAcceptance <- function(state) {
-  state$acceptR <- matrix(0,1+length(Rblock),1)
-  state$rejectR <- matrix(0,1+length(Rblock),1)
+  state$acceptR <- rep(0, 1+length(Rblock))
+  state$rejectR <- rep(0, 1+length(Rblock))
   return(state)
 }
 
