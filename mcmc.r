@@ -38,7 +38,7 @@ prior <- list(aR=aR, bR=bR,
               aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
 
 # burnin and samples are in terms of posterior samples
-control <- list(thinning = 50, samples = 1000, burnin = 20)
+control <- list(thinning = 50, chains = 4, samples = 1000 / 4, burnin = 20, parallel = TRUE)
 
 # data
 data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
@@ -48,40 +48,34 @@ proposal <- list(sigmaR=sigmaR, Rbefore=Rbefore, Rafter=Rafter, Rsigma=Rsigma_ei
                  sigmaU=sigmaU,
                  sigmaX=sigmaX)
 
-# TODO:
-# 1. Move the initacceptance code into the package
-# 2. Move the MCMC iteration code into the package
-# 3. Get parallisation working
-# 4. Move model initialisation into the package??
+# fit the model
 print(system.time({
-for (i in seq_len(control$burnin)) {
-  state <- update(data, state, prior, c(control, proposal))
-  state <- InitAcceptance(state)
-  cat("burnin sample:", i, "of", control$burnin, "\n")
-}
-posterior <- list()
-for (i in seq_len(control$samples)) {
-  state <- update(data, state, prior, c(control, proposal))
-  posterior[[i]] <- state
-  state <- InitAcceptance(state)
-  cat("posterior sample:", i, "of", control$samples, "\n")
-#  cat(file=outputfile, "iteration:", i, "\n")
-}
+posterior <- fit_model(data, state, prior, control=c(control, proposal))
 }))
+
+# do analysis
+ssapply <- function(x, fun, ...) {
+  simplify2array(lapply(x, function(xx, fun, ...) { simplify2array(lapply(xx, fun, ...)) }, fun = fun, ...))
+}
 
 extract_variable <- function(x, variable) {
   x[[variable]]
 }
-# now dump out our posterior
-R = simplify2array(lapply(posterior, extract_variable, 'R'))
-U = simplify2array(lapply(posterior, extract_variable, 'U'))
-betaX = simplify2array(lapply(posterior, extract_variable, 'betaX'))
-fe = simplify2array(lapply(posterior, extract_variable, 'fe'))
-kR = simplify2array(lapply(posterior, extract_variable, 'kR'))
-kU = simplify2array(lapply(posterior, extract_variable, 'kU'))
-X = simplify2array(lapply(posterior, extract_variable, 'X'))
-ecases = simplify2array(lapply(posterior, ExpectedCases))
-scases = simplify2array(lapply(posterior, ExpectedCases, smoothed=TRUE))
+
+# now dump out our posterior chains
+R = ssapply(posterior, extract_variable, 'R')
+U = ssapply(posterior, extract_variable, 'U')
+betaX = ssapply(posterior, extract_variable, 'betaX')
+fe = ssapply(posterior, extract_variable, 'fe')
+kR = ssapply(posterior, extract_variable, 'kR')
+kU = ssapply(posterior, extract_variable, 'kU')
+X = ssapply(posterior, extract_variable, 'X')
+pX = ssapply(posterior, extract_variable, 'pX')
+ecases = ssapply(posterior, cases_per_time, data=data, smoothed=FALSE)
+scases = ssapply(posterior, cases_per_time, data=data, smoothed=TRUE)
+plot(apply(ecases, 1, median), type='l')
+lines(apply(scases, 1, median), col='red')
+#hist(apply(R, 1, ess))
 
 write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
 write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)

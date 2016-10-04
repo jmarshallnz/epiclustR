@@ -3,6 +3,8 @@
 export(cases_per_time)
 export(deviance)
 export(expected_cases)
+export(fit_model)
+export(reset_acceptance)
 export(update)
 importFrom(Rcpp,sourceCpp)
 useDynLib(epiclustR)
