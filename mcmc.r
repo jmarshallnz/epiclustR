@@ -33,9 +33,7 @@ betaXLikelihood<-betaXLikelihoodRUX2
 XFullOutput <- TRUE
 
 # the priors
-prior <- list(aR=aR, bR=bR,
-              aU=aU, bU=bU,
-              aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
+prior <- init_priors()
 
 # burnin and samples are in terms of posterior samples
 control <- list(thinning = 50, chains = 4, samples = 1000 / 4, burnin = 20, parallel = TRUE)

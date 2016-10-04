@@ -1,3 +1,21 @@
+#' init_priors
+#'
+#' Initialize priors
+#' @param aR, bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500
+#' @param aU, bU Gamma hyper-prior on precision of U's, defaults to 1, 0.5
+#' @param aX, bX Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51
+#' @param abetaX, bbetaX Gamma hyper-prior on the size of an outbreak, defaults to 1,1
+#' @return a list of priors
+#' @export
+init_priors <- function(aR = 5, bR = 5/500,
+                        aU = 1, bU = 0.5,
+                        aX = 1, bX = 51,
+                        abetaX = 1, bbetaX = 1) {
+  list(aR=aR, bR=bR,
+       aU=aU, bU=bU,
+       aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
+}
+
 #' reset_acceptance
 #' @param state the current state of the Markov chain
 #' @return the state, with the acceptance probabilities reset
