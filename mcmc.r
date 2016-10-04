@@ -32,19 +32,15 @@ betaXLikelihood<-betaXLikelihoodRUX2
 
 XFullOutput <- TRUE
 
-# the priors
+# the priors and MCMC control parameters
 prior <- init_priors()
-
-# burnin and samples are in terms of posterior samples
-control <- list(thinning = 50, chains = 4, samples = 1000 / 4, burnin = 20, parallel = TRUE)
+control <- init_control(thinning=50, samples = 1000, burnin=20)
 
 # data
 data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
 
 # control of proposals
-proposal <- list(sigmaR=sigmaR, Rbefore=Rbefore, Rafter=Rafter, Rsigma=Rsigma_eigen,
-                 sigmaU=sigmaU,
-                 sigmaX=sigmaX)
+proposal <- list(Rbefore=Rbefore, Rafter=Rafter, Rsigma=Rsigma_eigen)
 
 # fit the model
 print(system.time({

@@ -16,6 +16,35 @@ init_priors <- function(aR = 5, bR = 5/500,
        aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
 }
 
+#' init_control
+#'
+#' Initialize the MCMC control parameters for fitting the epiclustR model
+#'
+#' @param samples The number of posterior samples required. These will be distributed
+#'                across the chains. Defaults to 1000.
+#' @param chains  The number of posterior chains to run. Each chain will generate
+#'                $samples/chains$ samples. Defaults to 4.
+#' @param thinning The amount of samples to skip per posterior sample for better
+#'                 independence between samples, defaults to 50.
+#' @param burnin   The number of posterior samples to discard prior to sampling. Defaults to 20
+#' @param parallel Whether to use parallel processing. Defaults to TRUE if chains > 1.
+#' @param sigmaR   Standard deviation of Metropolis-Hastings random walk jump for R, defaults to 1.
+#' @param sigmaU   Standard deviation of Metropolis-Hastings random walk jump for U, defaults to 1.
+#' @param sigmaX   Standard deviation of Metropolis-Hastings random walk jump for betaX, defaults to 1.
+#' @return list containing the MCMC control parameters.
+#' @export
+init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20, parallel = chains > 1,
+                         sigmaR = 1, sigmaU = 1, sigmaX = 1) {
+  list(thinning = thinning,
+       chains = chains,
+       samples = samples / chains,
+       burnin = burnin,
+       parallel = parallel,
+       sigmaR = sigmaR,
+       sigmaU = sigmaU,
+       sigmaX = sigmaX)
+}
+
 #' reset_acceptance
 #' @param state the current state of the Markov chain
 #' @return the state, with the acceptance probabilities reset
