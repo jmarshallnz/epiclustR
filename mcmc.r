@@ -77,12 +77,12 @@ plot(apply(ecases, 1, median), type='l')
 lines(apply(scases, 1, median), col='red')
 #hist(apply(R, 1, ess))
 
-write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
-write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)
-write.table(t(betaX), 'MidCentral/current_version/betaX.txt', row.names=FALSE, col.names=FALSE)
-write.table(t(fe), 'MidCentral/current_version/fixedEffects.txt', row.names=FALSE, col.names=FALSE)
-write.table(t(ecases), 'MidCentral/current_version/expectedCases.txt', row.names=FALSE, col.names=FALSE)
-write.table(t(scases), 'MidCentral/current_version/smoothedCases.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(betaX), 'MidCentral/current_version/betaX.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(fe), 'MidCentral/current_version/fixedEffects.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(ecases), 'MidCentral/current_version/expectedCases.txt', row.names=FALSE, col.names=FALSE)
+#write.table(t(scases), 'MidCentral/current_version/smoothedCases.txt', row.names=FALSE, col.names=FALSE)
 
 compare_var <- function(variable) {
   ref <- scan(file.path('MidCentral/RUX2_region2', paste0(variable, '.txt')))
