@@ -42,10 +42,8 @@ void update_r(const Data &data,
   double aR = prior["aR"];
   double bR = prior["bR"];
   double sigmaR = control["sigmaR"];
-  List Rbefore  = control["Rbefore"];
-  List Rafter   = control["Rafter"];
-  List Rsigma   = control["Rsigma"];
-  int max_methods = Rbefore.size() / 5;
+  List blockR   = control["blockR"];
+  int max_methods = blockR.size();
 
   // Gibbs update for kR
   s.kR = Util::rgamma(aR + 0.5*(s.R.length()-2), bR+0.5*sum_r_squared(s.R));
@@ -72,7 +70,11 @@ void update_r(const Data &data,
     } else {
       // Conditional Blocked Prior Proposal step to update R
       // first check if we're going to hit the end
-      int size = as<NumericMatrix>(Rbefore[method*5]).nrow();
+      List methodR = blockR[method];
+      List eigenR = methodR["K_eigen"];
+      List befR = methodR["K_before"];
+      List aftR = methodR["K_after"];
+      int size = as<NumericMatrix>(eigenR[0]).nrow();
       if (j + size > s.R.length()) { // hit the end, so shuffle down a bit
         j = s.R.length() - size;
       }
@@ -80,9 +82,9 @@ void update_r(const Data &data,
       int o = 2; // default method for j > 2
       if (j < 2) o = j;
       if (j + size > s.R.length() - 2) o = 4 - (s.R.length() - (j + size));
-      NumericMatrix rbe = Rbefore[method*5 + o];
-      NumericMatrix raf = Rafter[method*5 + o];
-      NumericMatrix rsigma = Rsigma[method*5 + o];
+      NumericMatrix rbe = befR[o];
+      NumericMatrix raf = aftR[o];
+      NumericMatrix rsigma = eigenR[o];
       NumericVector mu(rbe.nrow());
       for (int i = 0; i < mu.length(); i++) {
         for (int l = 0; l < rbe.ncol(); l++) {

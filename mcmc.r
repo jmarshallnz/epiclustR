@@ -39,12 +39,9 @@ control <- init_control(thinning=50, samples = 1000, burnin=20)
 # data
 data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
 
-# control of proposals
-proposal <- list(Rbefore=Rbefore, Rafter=Rafter, Rsigma=Rsigma_eigen)
-
 # fit the model
 print(system.time({
-posterior <- fit_model(data, state, prior, control=c(control, proposal))
+posterior <- fit_model(data, state, prior, control)
 }))
 
 # do analysis

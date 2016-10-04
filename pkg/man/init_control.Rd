@@ -5,7 +5,8 @@
 \title{init_control}
 \usage{
 init_control(samples = 1000, chains = 4, thinning = 50, burnin = 20,
-  parallel = chains > 1, sigmaR = 1, sigmaU = 1, sigmaX = 1)
+  parallel = chains > 1, sigmaR = 1, sigmaU = 1, sigmaX = 1,
+  blockR = c(4, 5, 9, 11))
 }
 \arguments{
 \item{samples}{The number of posterior samples required. These will be distributed
@@ -26,6 +27,9 @@ independence between samples, defaults to 50.}
 \item{sigmaU}{Standard deviation of Metropolis-Hastings random walk jump for U, defaults to 1.}
 
 \item{sigmaX}{Standard deviation of Metropolis-Hastings random walk jump for betaX, defaults to 1.}
+
+\item{blockR}{Block sizes for updating R from the conditional prior distribution. Should be
+mutually prime. Defaults to `c(4,5,9,11)`.}
 }
 \value{
 list containing the MCMC control parameters.

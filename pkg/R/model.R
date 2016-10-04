@@ -31,10 +31,15 @@ init_priors <- function(aR = 5, bR = 5/500,
 #' @param sigmaR   Standard deviation of Metropolis-Hastings random walk jump for R, defaults to 1.
 #' @param sigmaU   Standard deviation of Metropolis-Hastings random walk jump for U, defaults to 1.
 #' @param sigmaX   Standard deviation of Metropolis-Hastings random walk jump for betaX, defaults to 1.
+#' @param blockR   Block sizes for updating R from the conditional prior distribution. Should be
+#'                 mutually prime. Defaults to `c(4,5,9,11)`.
 #' @return list containing the MCMC control parameters.
 #' @export
 init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20, parallel = chains > 1,
-                         sigmaR = 1, sigmaU = 1, sigmaX = 1) {
+                         sigmaR = 1, sigmaU = 1, sigmaX = 1, blockR = c(4,5,9,11)) {
+  # Generate the block matrices
+  blocks <- lapply(blockR, construct_block_matrices)
+
   list(thinning = thinning,
        chains = chains,
        samples = samples / chains,
@@ -42,7 +47,8 @@ init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20,
        parallel = parallel,
        sigmaR = sigmaR,
        sigmaU = sigmaU,
-       sigmaX = sigmaX)
+       sigmaX = sigmaX,
+       blockR = blocks)
 }
 
 #' reset_acceptance
