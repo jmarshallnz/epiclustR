@@ -1,43 +1,98 @@
-set.seed(1)
-source("Functions/MCMCFunctions.r")
-
-params     <- defaults()
-params$incR <- TRUE
-params$incU <- TRUE
-params$incX <- TRUE
-params$Xmode <- 2
-params$regionchoice <- "2"
-
-# TODO: create the data files
-
-params$tps   <- 312
-params$mbs   <- 1834
-params$maxne <- 17
-params$baseDeviance <- 21000 # TODO: How is this defined?
-
-params$burnin     <- 10
-params$iters      <- 100
-params$samplefreq <- 1
-params$datapath   <- "."
-params$outpath    <- "MidCentral/current_version"
-sigmaR<-1
-
-# TODO: Initialize currently loads the data. This needs to be changed
-state <- Initialise("MidCentral", setpriors = 2)
-
-RLikelihood<-RLikelihoodRUX2
-ULikelihood<-ULikelihoodRUX2
-XLikelihood<-XLikelihoodRUX2
-betaXLikelihood<-betaXLikelihoodRUX2
-
-XFullOutput <- TRUE
+library(epiclustR)
 
 # the priors and MCMC control parameters
 prior <- init_priors()
 control <- init_control(thinning=50, samples = 1000, burnin=20)
 
+# load spatial data
+load_spatial_neighbours <- function(path, file = "Weights.GAL") {
+  input<-scan(file.path(path, file))
+  n <- input[2]
+  spatial_list <- list()
+  i<-3
+  for (j in 1:n) {
+    k <- input[i] # name of spatial location
+    nb <- input[i+1+1:input[i+1]] # it's neighbours
+    i <- i + 2 + length(nb)
+    spatial_list[[k]] <- nb
+  }
+  if (n != length(spatial_list))
+    stop("Invalid spatial neighbours: Incorrect length")
+  length_neighbours <- unlist(lapply(spatial_list, length))
+  max_neighbours <- max(length_neighbours)
+  spatial_matrix <- matrix(0, n, max_neighbours + 1)
+  spatial_matrix[,1] <- length_neighbours
+  for (j in 1:n)
+    spatial_matrix[j,1 + seq_along(spatial_list[[j]])] <- spatial_list[[j]]
+  spatial_matrix
+}
+
+load_spatial <- function(path, file = "Meshblocks.txt") {
+  input<-read.table(file.path(path, file), header=FALSE)
+  n <- input[,2]
+  return(n)
+}
+
+load_regions <- function(path, file) {
+  regions <- read.table(file.path(path, file), header=FALSE)
+  mbrg <- regions[,1]
+  return(mbrg)
+}
+
+init_region_lut <- function(mbrg) {
+  lut <- list()
+  rgs <- max(mbrg)
+  for (j in 1:rgs) {
+    lut[[j]] <- which(mbrg==j)
+  }
+  lut
+}
+
+nb   <- load_spatial_neighbours("MidCentral", "Weights.GAL")
+popn <- load_spatial("MidCentral", "Meshblocks.txt")
+mbrg <- load_regions("MidCentral", "Regions2.txt")
+rgmb <- init_region_lut(mbrg)
+
+# load the cases
+load_cases <- function(path, file) {
+  input<-scan(file.path(path, file))
+  tps <- 312
+  matrix(input, tps)
+}
+cases <- load_cases("MidCentral", "Data.txt")
+
+# sanity checking...
+check_popn <- function(n, cases) {
+  wch <- which(n == 0 & apply(cases, 2, sum) > 0)
+  if (length(wch > 0)) {
+    cat("Setting population to 1 in spatial locations ", wch, " as we have cases there and popn=0\n")
+  }
+  n[wch] = 1
+  n
+}
+
+popn <- check_popn(popn, cases)
+
+# construct the state
+set.seed(1)
+pX = 0.1
+state <- list(fe = -10,
+              R  = rnorm(nrow(cases),0,1),
+              U = rnorm(length(popn),0,1),
+              X = matrix(rbinom(nrow(cases)*length(rgmb),1,pX),nrow(cases),length(rgmb)),
+              betaX = rep(0.2,length(rgmb)),
+              pX = 0.1,
+              kU = 1,
+              kR = 1,
+              acceptR = rep(0, 1+4), # TODO: Move these somewhere else...
+              rejectR = rep(0, 1+4),
+              acceptU = rep(0,2),
+              rejectU = rep(0,2),
+              acceptX = 0,
+              rejectX = 0)
+
 # data
-data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+data <- list(cases=cases, popn=popn, mbrg=mbrg, nb=nb, rgmb=rgmb)
 
 # fit the model
 print(system.time({
