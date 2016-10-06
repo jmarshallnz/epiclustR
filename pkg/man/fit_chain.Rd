@@ -4,14 +4,12 @@
 \alias{fit_chain}
 \title{Fits an MCMC chain for the epiclustR model for the given dataset}
 \usage{
-fit_chain(chain, data, state, prior, control)
+fit_chain(chain, data, prior, control)
 }
 \arguments{
 \item{chain}{the MCMC chain to run}
 
 \item{data}{the data for the model}
-
-\item{state}{the current state of the Markov chain}
 
 \item{prior}{details on the priors for the model}
 

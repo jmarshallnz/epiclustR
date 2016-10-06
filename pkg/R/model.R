@@ -93,11 +93,13 @@ reset_acceptance <- function(state) {
 #'
 #' @param chain the MCMC chain to run
 #' @param data the data for the model
-#' @param state the current state of the Markov chain
 #' @param prior details on the priors for the model
 #' @param control details on the control for the model
 #' @return the posterior for this chain
-fit_chain <- function(chain, data, state, prior, control) {
+fit_chain <- function(chain, data, prior, control) {
+
+  state <- init_state(nrow(data$cases), ncol(data$cases), length(data$rgmb))
+
   if (chain == 1)
     pb <- txtProgressBar(min=0, max=control$burnin+control$samples, width=56, style=3)
   for (i in seq_len(control$burnin)) {
@@ -138,19 +140,16 @@ fit_model <- function(data, prior, control) {
   }
   data$popn <- check_popn(data$popn, data$cases)
 
-  # setup our state
-  state <- init_state(nrow(data$cases), ncol(data$cases), length(data$rgmb))
-
   # run our chains
   if (control$parallel) {
     no_cores <- min(parallel::detectCores(), control$chains)
     cluster <- parallel::makeCluster(no_cores, outfile="")
     parallel::clusterSetRNGStream(cluster, 1)
-    posterior <- parallel::clusterApply(cluster, 1:control$chains, fit_chain, data=data, state=state, prior=prior, control=control)
+    posterior <- parallel::clusterApply(cluster, 1:control$chains, fit_chain, data=data, prior=prior, control=control)
     parallel::stopCluster(cluster)
   } else {
     set.seed(1)
-    posterior <- lapply(1:control$chains, fit_chain, data=data, state=state, prior=prior, control=control)
+    posterior <- lapply(1:control$chains, fit_chain, data=data, prior=prior, control=control)
   }
   posterior
 }
