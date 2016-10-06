@@ -31,9 +31,8 @@ cases <- load_cases("MidCentral", "Data.txt")
 data <- list(cases=cases, popn=popn, mbrg=mbrg, nb=nb)
 
 # fit the model
-set.seed(1)
 print(system.time({
-posterior <- fit_model(data, prior, control)
+posterior <- fit_model(data, prior, control, seed = 1)
 }))
 
 # do analysis

@@ -4,7 +4,7 @@
 \alias{fit_model}
 \title{Fits the epiclustR model for the given dataset}
 \usage{
-fit_model(data, prior, control)
+fit_model(data, prior, control, seed = NULL)
 }
 \arguments{
 \item{data}{the data for the model}
@@ -12,6 +12,8 @@ fit_model(data, prior, control)
 \item{prior}{details on the priors for the model}
 
 \item{control}{details on the control for the model}
+
+\item{the}{random number seed to set. Defaults to NULL (a random seed)}
 }
 \value{
 the posterior for this chain

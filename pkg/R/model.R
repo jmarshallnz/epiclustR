@@ -123,9 +123,10 @@ fit_chain <- function(chain, data, prior, control) {
 #' @param data the data for the model
 #' @param prior details on the priors for the model
 #' @param control details on the control for the model
+#' @param the random number seed to set. Defaults to NULL (a random seed)
 #' @return the posterior for this chain
 #' @export
-fit_model <- function(data, prior, control) {
+fit_model <- function(data, prior, control, seed = NULL) {
   # initialize the region lookup table
   data$rgmb <- init_region_lut(data$mbrg)
 
@@ -144,11 +145,11 @@ fit_model <- function(data, prior, control) {
   if (control$parallel) {
     no_cores <- min(parallel::detectCores(), control$chains)
     cluster <- parallel::makeCluster(no_cores, outfile="")
-    parallel::clusterSetRNGStream(cluster, 1)
+    parallel::clusterSetRNGStream(cluster, seed)
     posterior <- parallel::clusterApply(cluster, 1:control$chains, fit_chain, data=data, prior=prior, control=control)
     parallel::stopCluster(cluster)
   } else {
-    set.seed(1)
+    set.seed(seed)
     posterior <- lapply(1:control$chains, fit_chain, data=data, prior=prior, control=control)
   }
   posterior
