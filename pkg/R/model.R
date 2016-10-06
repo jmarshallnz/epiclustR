@@ -48,6 +48,32 @@ init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20,
        blockR = blocks)
 }
 
+#' Initialize the model state
+#'
+#' @param ntimes The number of time points
+#' @param nspace The number of spatial units
+#' @param nregions The number of regions
+#' @param fe The starting value for the fixed effect
+#' @param pX The starting value for pX, the probability of an outbreak
+#' @param kU,kR The starting values for the precision of spatial and temporal components.
+#' @return A list containing the model state
+init_state <- function(ntimes, nspace, nregions, fe = -10, pX = 0.1, kU = 1, kR = 1) {
+  list(fe = fe,
+       R  = rnorm(ntimes,0,1),
+       U = rnorm(nspace,0,1),
+       X = matrix(rbinom(ntimes*nregions,1,pX), ntimes, nregions),
+       betaX = rep(0.2,nregions),
+       pX = pX,
+       kU = kU,
+       kR = kR,
+       acceptR = rep(0, 1+4), # TODO: Move these somewhere else...
+       rejectR = rep(0, 1+4),
+       acceptU = rep(0,2),
+       rejectU = rep(0,2),
+       acceptX = 0,
+       rejectX = 0)
+}
+
 #' Reset the acceptance variables in the model state
 #'
 #' @param state the current state of the Markov chain
@@ -93,12 +119,29 @@ fit_chain <- function(chain, data, state, prior, control) {
 #' Fits the epiclustR model for the given dataset
 #'
 #' @param data the data for the model
-#' @param state the current state of the Markov chain
 #' @param prior details on the priors for the model
 #' @param control details on the control for the model
 #' @return the posterior for this chain
 #' @export
-fit_model <- function(data, state, prior, control) {
+fit_model <- function(data, prior, control) {
+  # initialize the region lookup table
+  data$rgmb <- init_region_lut(data$mbrg)
+
+  # check we have population where we have cases
+  check_popn <- function(n, cases) {
+    wch <- which(n == 0 & apply(cases, 2, sum) > 0)
+    if (length(wch > 0)) {
+      cat("Setting population to 1 in spatial locations ", wch, " as we have cases there and popn=0\n")
+    }
+    n[wch] = 1
+    n
+  }
+  data$popn <- check_popn(data$popn, data$cases)
+
+  # setup our state
+  state <- init_state(nrow(data$cases), ncol(data$cases), length(data$rgmb))
+
+  # run our chains
   if (control$parallel) {
     no_cores <- min(parallel::detectCores(), control$chains)
     cluster <- parallel::makeCluster(no_cores, outfile="")

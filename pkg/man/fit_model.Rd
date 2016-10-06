@@ -4,12 +4,10 @@
 \alias{fit_model}
 \title{Fits the epiclustR model for the given dataset}
 \usage{
-fit_model(data, state, prior, control)
+fit_model(data, prior, control)
 }
 \arguments{
 \item{data}{the data for the model}
-
-\item{state}{the current state of the Markov chain}
 
 \item{prior}{details on the priors for the model}
 

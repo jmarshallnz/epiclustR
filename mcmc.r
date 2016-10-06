@@ -4,29 +4,6 @@ library(epiclustR)
 prior <- init_priors()
 control <- init_control(thinning=50, samples = 1000, burnin=20)
 
-# load spatial data
-load_spatial_neighbours <- function(path, file = "Weights.GAL") {
-  input<-scan(file.path(path, file))
-  n <- input[2]
-  spatial_list <- list()
-  i<-3
-  for (j in 1:n) {
-    k <- input[i] # name of spatial location
-    nb <- input[i+1+1:input[i+1]] # it's neighbours
-    i <- i + 2 + length(nb)
-    spatial_list[[k]] <- nb
-  }
-  if (n != length(spatial_list))
-    stop("Invalid spatial neighbours: Incorrect length")
-  length_neighbours <- unlist(lapply(spatial_list, length))
-  max_neighbours <- max(length_neighbours)
-  spatial_matrix <- matrix(0, n, max_neighbours + 1)
-  spatial_matrix[,1] <- length_neighbours
-  for (j in 1:n)
-    spatial_matrix[j,1 + seq_along(spatial_list[[j]])] <- spatial_list[[j]]
-  spatial_matrix
-}
-
 load_spatial <- function(path, file = "Meshblocks.txt") {
   input<-read.table(file.path(path, file), header=FALSE)
   n <- input[,2]
@@ -39,64 +16,24 @@ load_regions <- function(path, file) {
   return(mbrg)
 }
 
-init_region_lut <- function(mbrg) {
-  lut <- list()
-  rgs <- max(mbrg)
-  for (j in 1:rgs) {
-    lut[[j]] <- which(mbrg==j)
-  }
-  lut
-}
-
-nb   <- load_spatial_neighbours("MidCentral", "Weights.GAL")
-popn <- load_spatial("MidCentral", "Meshblocks.txt")
-mbrg <- load_regions("MidCentral", "Regions2.txt")
-rgmb <- init_region_lut(mbrg)
-
-# load the cases
 load_cases <- function(path, file) {
   input<-scan(file.path(path, file))
   tps <- 312
   matrix(input, tps)
 }
+
+nb   <- load_spatial_neighbours(file.path("MidCentral", "Weights.GAL"))
+popn <- load_spatial("MidCentral", "Meshblocks.txt")
+mbrg <- load_regions("MidCentral", "Regions2.txt")
 cases <- load_cases("MidCentral", "Data.txt")
 
-# sanity checking...
-check_popn <- function(n, cases) {
-  wch <- which(n == 0 & apply(cases, 2, sum) > 0)
-  if (length(wch > 0)) {
-    cat("Setting population to 1 in spatial locations ", wch, " as we have cases there and popn=0\n")
-  }
-  n[wch] = 1
-  n
-}
-
-popn <- check_popn(popn, cases)
-
-# construct the state
-set.seed(1)
-pX = 0.1
-state <- list(fe = -10,
-              R  = rnorm(nrow(cases),0,1),
-              U = rnorm(length(popn),0,1),
-              X = matrix(rbinom(nrow(cases)*length(rgmb),1,pX),nrow(cases),length(rgmb)),
-              betaX = rep(0.2,length(rgmb)),
-              pX = 0.1,
-              kU = 1,
-              kR = 1,
-              acceptR = rep(0, 1+4), # TODO: Move these somewhere else...
-              rejectR = rep(0, 1+4),
-              acceptU = rep(0,2),
-              rejectU = rep(0,2),
-              acceptX = 0,
-              rejectX = 0)
-
-# data
-data <- list(cases=cases, popn=popn, mbrg=mbrg, nb=nb, rgmb=rgmb)
+# assemble data
+data <- list(cases=cases, popn=popn, mbrg=mbrg, nb=nb)
 
 # fit the model
+set.seed(1)
 print(system.time({
-posterior <- fit_model(data, state, prior, control)
+posterior <- fit_model(data, prior, control)
 }))
 
 # do analysis
