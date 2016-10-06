@@ -1,6 +1,5 @@
-#' init_priors
-#'
 #' Initialize priors
+#'
 #' @param aR, bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500
 #' @param aU, bU Gamma hyper-prior on precision of U's, defaults to 1, 0.5
 #' @param aX, bX Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51
@@ -16,8 +15,6 @@ init_priors <- function(aR = 5, bR = 5/500,
        aX=aX, bX=bX, abetaX=abetaX, bbetaX=bbetaX)
 }
 
-#' init_control
-#'
 #' Initialize the MCMC control parameters for fitting the epiclustR model
 #'
 #' @param samples The number of posterior samples required. These will be distributed
@@ -51,7 +48,8 @@ init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20,
        blockR = blocks)
 }
 
-#' reset_acceptance
+#' Reset the acceptance variables in the model state
+#'
 #' @param state the current state of the Markov chain
 #' @return the state, with the acceptance probabilities reset
 #' @export
@@ -65,9 +63,8 @@ reset_acceptance <- function(state) {
   return(state)
 }
 
-#' fit_chain
-#' 
 #' Fits an MCMC chain for the epiclustR model for the given dataset
+#'
 #' @param chain the MCMC chain to run
 #' @param data the data for the model
 #' @param state the current state of the Markov chain
@@ -93,9 +90,8 @@ fit_chain <- function(chain, data, state, prior, control) {
   posterior
 }
 
-#' fit_model
-#' 
 #' Fits the epiclustR model for the given dataset
+#'
 #' @param data the data for the model
 #' @param state the current state of the Markov chain
 #' @param prior details on the priors for the model

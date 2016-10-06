@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{fit_chain}
 \alias{fit_chain}
-\title{fit_chain}
+\title{Fits an MCMC chain for the epiclustR model for the given dataset}
 \usage{
 fit_chain(chain, data, state, prior, control)
 }

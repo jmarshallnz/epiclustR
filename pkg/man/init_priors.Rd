@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{init_priors}
 \alias{init_priors}
-\title{init_priors}
+\title{Initialize priors}
 \usage{
 init_priors(aR = 5, bR = 5/500, aU = 1, bU = 0.5, aX = 1, bX = 51,
   abetaX = 1, bbetaX = 1)

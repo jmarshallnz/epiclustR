@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{reset_acceptance}
 \alias{reset_acceptance}
-\title{reset_acceptance}
+\title{Reset the acceptance variables in the model state}
 \usage{
 reset_acceptance(state)
 }
@@ -13,6 +13,6 @@ reset_acceptance(state)
 the state, with the acceptance probabilities reset
 }
 \description{
-reset_acceptance
+Reset the acceptance variables in the model state
 }
 

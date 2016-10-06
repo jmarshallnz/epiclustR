@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{fit_model}
 \alias{fit_model}
-\title{fit_model}
+\title{Fits the epiclustR model for the given dataset}
 \usage{
 fit_model(data, state, prior, control)
 }

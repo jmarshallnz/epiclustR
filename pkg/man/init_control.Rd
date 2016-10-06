@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{init_control}
 \alias{init_control}
-\title{init_control}
+\title{Initialize the MCMC control parameters for fitting the epiclustR model}
 \usage{
 init_control(samples = 1000, chains = 4, thinning = 50, burnin = 20,
   parallel = chains > 1, sigmaR = 1, sigmaU = 1, sigmaX = 1,
