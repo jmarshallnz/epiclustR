@@ -118,15 +118,12 @@ fit_chain <- function(chain, data, prior, control) {
   posterior
 }
 
-#' Fits the epiclustR model for the given dataset
-#'
+#' Checks the data and updates it, e.g. for no population where we have cases
+#' 
 #' @param data the data for the model
-#' @param prior details on the priors for the model
-#' @param control details on the control for the model
-#' @param the random number seed to set. Defaults to NULL (a random seed)
-#' @return the posterior for this chain
+#' @return the checked (and possibly updated) data for the model
 #' @export
-fit_model <- function(data, prior, control, seed = NULL) {
+check_data <- function(data) {
   # initialize the region lookup table
   data$rgmb <- init_region_lut(data$mbrg)
 
@@ -140,6 +137,21 @@ fit_model <- function(data, prior, control, seed = NULL) {
     n
   }
   data$popn <- check_popn(data$popn, data$cases)
+
+  data
+}
+
+#' Fits the epiclustR model for the given dataset
+#'
+#' @param data the data for the model
+#' @param prior details on the priors for the model
+#' @param control details on the control for the model
+#' @param the random number seed to set. Defaults to NULL (a random seed)
+#' @return the posterior for this chain
+#' @export
+fit_model <- function(data, prior, control, seed = NULL) {
+  # make sure the data has been checked
+  data <- check_data(data)
 
   # run our chains
   if (control$parallel) {

@@ -28,7 +28,7 @@ mbrg <- load_regions("MidCentral", "Regions2.txt")
 cases <- load_cases("MidCentral", "Data.txt")
 
 # assemble data
-data <- list(cases=cases, popn=popn, mbrg=mbrg, nb=nb)
+data <- check_data(list(cases=cases, popn=popn, mbrg=mbrg, nb=nb))
 
 # fit the model
 print(system.time({
