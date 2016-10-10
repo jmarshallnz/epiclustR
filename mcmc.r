@@ -1,31 +1,29 @@
 library(epiclustR)
+library(dplyr)
+library(tidyr)
 
 # the priors and MCMC control parameters
 prior <- init_priors()
 control <- init_control(thinning=50, samples = 1000, burnin=20)
 
-load_spatial <- function(path, file = "Meshblocks.txt") {
-  input<-read.table(file.path(path, file), header=FALSE)
-  n <- input[,2]
-  return(n)
-}
+spat <- read.table("Meshblocks.txt", header=TRUE)
 
-load_regions <- function(path, file) {
-  regions <- read.table(file.path(path, file), header=FALSE)
-  mbrg <- regions[,1]
-  return(mbrg)
-}
+nb   <- load_spatial_neighbours("Weights.GAL")
+popn <- spat$Population
+mbrg <- spat$CAU
 
-load_cases <- function(path, file) {
-  input<-scan(file.path(path, file))
-  tps <- 312
-  matrix(input, tps)
-}
+case <- read.csv("CaseData/cases.csv")
 
-nb   <- load_spatial_neighbours(file.path("MidCentral", "Weights.GAL"))
-popn <- load_spatial("MidCentral", "Meshblocks.txt")
-mbrg <- load_regions("MidCentral", "Regions2.txt")
-cases <- load_cases("MidCentral", "Data.txt")
+case <- case %>% filter(Meshblock06 %in% spat$Meshblock06)
+
+# now compute the number of cases per meshblock per time
+cases <- matrix(0, max(case$WeekFromStart), length(mbrg))
+rownames(cases) <- 1:max(case$WeekFromStart)
+colnames(cases) <- spat$Meshblock06
+
+tab <- case %>% group_by(WeekFromStart, Meshblock06) %>% summarize(Cases = n())
+week_by_mb <- tab %>% spread(Meshblock06, Cases, fill = 0)
+cases[as.character(week_by_mb$WeekFromStart),names(week_by_mb)[-1]] <- as.matrix(week_by_mb[,-1])
 
 # assemble data
 data <- check_data(list(cases=cases, popn=popn, mbrg=mbrg, nb=nb))
