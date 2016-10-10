@@ -57,6 +57,12 @@ plot(apply(ecases, 1, median), type='l')
 lines(apply(scases, 1, median), col='red')
 #hist(apply(R, 1, ess))
 
+library(ggplot2)
+pX %>% data.frame %>%
+  mutate(iteration=seq_len(n())) %>%
+  gather('chain', 'value', -iteration) %>%
+  ggplot(aes(x=iteration, y=value)) + geom_line(aes(colour=chain))
+
 #write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
 #write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)
 #write.table(t(betaX), 'MidCentral/current_version/betaX.txt', row.names=FALSE, col.names=FALSE)
