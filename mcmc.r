@@ -62,24 +62,3 @@ pX %>% data.frame %>%
   mutate(iteration=seq_len(n())) %>%
   gather('chain', 'value', -iteration) %>%
   ggplot(aes(x=iteration, y=value)) + geom_line(aes(colour=chain))
-
-#write.table(t(R), 'MidCentral/current_version/R.txt', row.names=FALSE, col.names=FALSE)
-#write.table(t(U), 'MidCentral/current_version/U.txt', row.names=FALSE, col.names=FALSE)
-#write.table(t(betaX), 'MidCentral/current_version/betaX.txt', row.names=FALSE, col.names=FALSE)
-#write.table(t(fe), 'MidCentral/current_version/fixedEffects.txt', row.names=FALSE, col.names=FALSE)
-#write.table(t(ecases), 'MidCentral/current_version/expectedCases.txt', row.names=FALSE, col.names=FALSE)
-#write.table(t(scases), 'MidCentral/current_version/smoothedCases.txt', row.names=FALSE, col.names=FALSE)
-
-compare_var <- function(variable) {
-  ref <- scan(file.path('MidCentral/RUX2_region2', paste0(variable, '.txt')))
-  new <- scan(file.path('MidCentral/current_version', paste0(variable, '.txt')))
-  print(all.equal(ref, new))
-}
-
-# compare versions
-compare_var('fixedEffects')
-compare_var('R')
-compare_var('U')
-compare_var('betaX')
-compare_var('expectedCases')
-compare_var('smoothedCases')
