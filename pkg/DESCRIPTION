@@ -9,7 +9,7 @@ Description: Fits a spatio-temporal model to disease case data at the areal
     expected.
 Depends:
     R (>= 3.2.2)
-License: GPL2+
+License: GPL-2
 LazyData: true
 LinkingTo: Rcpp
 Imports:
