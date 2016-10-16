@@ -15,7 +15,7 @@ table_outbreaks <- function(mod, data, period = NULL, threshold = 0.2) {
 
   # match these up with cases
   case_outbreaks <- data$case_list %>% dplyr::left_join(data$spat_list, by="Spatial") %>%
-    dplyr::left_join(regions)
+    dplyr::left_join(regions, by=c("Region", "ReportWeek"))
   case_outbreaks <- case_outbreaks[,c('CaseID', 'ReportWeek', 'Region', 'P')]
 
   # filter out the date period
@@ -29,6 +29,7 @@ table_outbreaks <- function(mod, data, period = NULL, threshold = 0.2) {
 
   # pull out the cases that correspond to these outbreaks
   tab <- case_outbreaks[order(case_outbreaks$ReportWeek),]
+  tab$ReportWeek = as.character(tab$ReportWeek)
   dupes <- duplicated(tab[,c('Region', 'ReportWeek', 'P')])
   tab[dupes, c('Region', 'ReportWeek', 'P')] <- ''
 
