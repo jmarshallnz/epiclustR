@@ -16,16 +16,15 @@ A matrix of spatial neighbours, the first column of which is the number of neigh
 Loads a spatial neighbours file, of the format
 }
 \details{
-0
-6
-1
-5 2 3 4 5 6
-2
-2 1 3
+0 6
+1 5
+2 3 4 5 6
+2 2 
+1 3
 
-where odd rows indicate the spatial unit being considered, and
-even rows are it's neighbours, with the first entry being the
-number of neighbours. i.e. there are 6 spatial units in the
+where even rows indicate the spatial unit being considered, and
+it's number of neighbours, and odd rows indicating what the neighbours are.
+i.e. there are 6 spatial units in the
 file above, and unit 1 has 5 neighbours which are units 2 through 5,
 while unit 2 has 2 neighbours (1 and 3).
 }
