@@ -1,7 +1,7 @@
 #' @importFrom grDevices col2rgb rgb
 #' @importFrom stats quantile
 #' @importFrom dplyr %>%
-#' @importFrom graphics plot
+#' @importFrom sp plot
 NULL
 
 #' Plot spatial trends from an epiclustR model
@@ -59,7 +59,7 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
     bbox = sp::bbox(map)
 
   # plot the map
-  plot(map, col=map_col, lwd=0.02, border='grey80', xlim=bbox[1,], ylim=bbox[2,])
+  sp::plot(map, col=map_col, lwd=0.02, border='grey80', xlim=bbox[1,], ylim=bbox[2,])
 
   # overlay the outbreaks
   red <- function(x) {
