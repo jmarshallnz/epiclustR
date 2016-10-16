@@ -4,7 +4,7 @@
 \alias{expected_cases}
 \title{Computed expected cases per time per space}
 \usage{
-expected_cases(data, state, smoothed = FALSE)
+expected_cases(data, state, smoothed = FALSE, spatial = integer(0))
 }
 \arguments{
 \item{data}{a list containing the data}
@@ -12,6 +12,8 @@ expected_cases(data, state, smoothed = FALSE)
 \item{state}{the current state of the Markov chain}
 
 \item{smoothed}{set true to smooth the cases (i.e. preclude outbreaks). Defaults to false}
+
+\item{spatial}{the spatial locations to compute the expected cases at.}
 }
 \value{
 a matrix containing the expected cases in time and space

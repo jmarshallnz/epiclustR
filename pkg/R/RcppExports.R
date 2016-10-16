@@ -16,10 +16,11 @@ deviance <- function(data, state) {
 #' @param data a list containing the data
 #' @param state the current state of the Markov chain
 #' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+#' @param spatial the spatial locations to compute the expected cases at.
 #' @return a matrix containing the expected cases in time and space
 #' @export
-expected_cases <- function(data, state, smoothed = FALSE) {
-    .Call('epiclustR_expected_cases', PACKAGE = 'epiclustR', data, state, smoothed)
+expected_cases <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
+    .Call('epiclustR_expected_cases', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 #' Compute expected cases over time
@@ -27,10 +28,11 @@ expected_cases <- function(data, state, smoothed = FALSE) {
 #' @param data a list containing the data
 #' @param state the current state of the Markov chain
 #' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+#' @param spatial the set of spatial regions to compute the expected cases at
 #' @return a matrix containing the expected cases in time and space
 #' @export
-cases_per_time <- function(data, state, smoothed = FALSE) {
-    .Call('epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed)
+cases_per_time <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
+    .Call('epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 rbernoulli <- function(p) {

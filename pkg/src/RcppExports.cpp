@@ -18,28 +18,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // expected_cases
-Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed);
-RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP) {
+Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed, IntegerVector spatial);
+RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type data(dataSEXP);
     Rcpp::traits::input_parameter< List >::type state(stateSEXP);
     Rcpp::traits::input_parameter< bool >::type smoothed(smoothedSEXP);
-    rcpp_result_gen = Rcpp::wrap(expected_cases(data, state, smoothed));
+    Rcpp::traits::input_parameter< IntegerVector >::type spatial(spatialSEXP);
+    rcpp_result_gen = Rcpp::wrap(expected_cases(data, state, smoothed, spatial));
     return rcpp_result_gen;
 END_RCPP
 }
 // cases_per_time
-Rcpp::NumericVector cases_per_time(List data, List state, bool smoothed);
-RcppExport SEXP epiclustR_cases_per_time(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP) {
+Rcpp::NumericVector cases_per_time(List data, List state, bool smoothed, IntegerVector spatial);
+RcppExport SEXP epiclustR_cases_per_time(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type data(dataSEXP);
     Rcpp::traits::input_parameter< List >::type state(stateSEXP);
     Rcpp::traits::input_parameter< bool >::type smoothed(smoothedSEXP);
-    rcpp_result_gen = Rcpp::wrap(cases_per_time(data, state, smoothed));
+    Rcpp::traits::input_parameter< IntegerVector >::type spatial(spatialSEXP);
+    rcpp_result_gen = Rcpp::wrap(cases_per_time(data, state, smoothed, spatial));
     return rcpp_result_gen;
 END_RCPP
 }
