@@ -1,7 +1,7 @@
-#' @importFrom maptools readShapeSpatial
-#' @importFrom sp bbox plot
-#' @importFrom dplyr %>% select mutate filter
 #' @importFrom grDevices col2rgb rgb
+#' @importFrom stats quantile
+#' @importFrom dplyr %>%
+#' @importFrom graphics plot
 NULL
 
 #' Plot spatial trends from an epiclustR model

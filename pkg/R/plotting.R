@@ -1,3 +1,4 @@
+#' @importFrom graphics axis legend lines segments text
 NULL
 
 ssapply <- function(x, fun, ...) {

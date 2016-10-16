@@ -1,3 +1,7 @@
+#' @importFrom stats rbinom rnorm
+#' @importFrom utils txtProgressBar setTxtProgressBar
+NULL
+
 #' Initialize priors
 #'
 #' @param aR,bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500

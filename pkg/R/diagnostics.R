@@ -1,3 +1,6 @@
+#' @importFrom stats acf var
+NULL
+
 #' Estimated sample size from MCMC chain
 #' 
 #' Computation taken from the `rstan` package. Included here so that the package

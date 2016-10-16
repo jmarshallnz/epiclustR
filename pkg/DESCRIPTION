@@ -13,5 +13,10 @@ License: GPL2+
 LazyData: true
 LinkingTo: Rcpp
 Imports:
-    Rcpp
+    Rcpp,
+    dplyr,
+    tidyr,
+    maptools,
+    sp,
+    parallel
 RoxygenNote: 5.0.1
