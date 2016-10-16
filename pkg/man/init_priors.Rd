@@ -8,13 +8,13 @@ init_priors(aR = 5, bR = 5/500, aU = 1, bU = 0.5, aX = 1, bX = 51,
   abetaX = 1, bbetaX = 1)
 }
 \arguments{
-\item{aR, }{bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500}
+\item{aR, bR}{Gamma hyper-prior on precision of R's, defaults to 5, 5/500}
 
-\item{aU, }{bU Gamma hyper-prior on precision of U's, defaults to 1, 0.5}
+\item{aU, bU}{Gamma hyper-prior on precision of U's, defaults to 1, 0.5}
 
-\item{aX, }{bX Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51}
+\item{aX, bX}{Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51}
 
-\item{abetaX, }{bbetaX Gamma hyper-prior on the size of an outbreak, defaults to 1,1}
+\item{abetaX, bbetaX}{Gamma hyper-prior on the size of an outbreak, defaults to 1,1}
 }
 \value{
 a list of priors

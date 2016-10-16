@@ -1,4 +1,7 @@
 #' Computes the scaled eigen-vectors of a matrix A
+#'
+#' @param A the matrix to compute scaled eigen-vectors on
+#' @return the scaled eigenvectors of A
 eigen_scale <- function(A) {
   eig <- eigen(A, symmetric=TRUE)
   eig$vectors %*% diag(sqrt(pmax(eig$values,0)))

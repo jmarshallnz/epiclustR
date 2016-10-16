@@ -13,7 +13,7 @@ fit_model(data, prior, control, seed = NULL)
 
 \item{control}{details on the control for the model}
 
-\item{the}{random number seed to set. Defaults to NULL (a random seed)}
+\item{seed}{the random number seed to set. Defaults to NULL (a random seed)}
 }
 \value{
 the posterior for this chain

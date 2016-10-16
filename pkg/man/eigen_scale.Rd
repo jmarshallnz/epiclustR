@@ -6,6 +6,12 @@
 \usage{
 eigen_scale(A)
 }
+\arguments{
+\item{A}{the matrix to compute scaled eigen-vectors on}
+}
+\value{
+the scaled eigenvectors of A
+}
 \description{
 Computes the scaled eigen-vectors of a matrix A
 }

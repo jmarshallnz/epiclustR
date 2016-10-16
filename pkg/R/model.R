@@ -1,9 +1,9 @@
 #' Initialize priors
 #'
-#' @param aR, bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500
-#' @param aU, bU Gamma hyper-prior on precision of U's, defaults to 1, 0.5
-#' @param aX, bX Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51
-#' @param abetaX, bbetaX Gamma hyper-prior on the size of an outbreak, defaults to 1,1
+#' @param aR,bR Gamma hyper-prior on precision of R's, defaults to 5, 5/500
+#' @param aU,bU Gamma hyper-prior on precision of U's, defaults to 1, 0.5
+#' @param aX,bX Beta hyper-prior on probability of an outbreak per year per region, defaults to 1,51
+#' @param abetaX,bbetaX Gamma hyper-prior on the size of an outbreak, defaults to 1,1
 #' @return a list of priors
 #' @export
 init_priors <- function(aR = 5, bR = 5/500,
@@ -148,7 +148,7 @@ check_data <- function(data) {
 #' @param data the data for the model
 #' @param prior details on the priors for the model
 #' @param control details on the control for the model
-#' @param the random number seed to set. Defaults to NULL (a random seed)
+#' @param seed the random number seed to set. Defaults to NULL (a random seed)
 #' @return the posterior for this chain
 #' @export
 fit_model <- function(data, prior, control, seed = NULL) {
