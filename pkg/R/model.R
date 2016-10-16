@@ -111,6 +111,8 @@ fit_chain <- function(chain, data, prior, control) {
   for (i in seq_len(control$samples)) {
     state <- update(data, state, prior, control)
     posterior[[i]] <- state
+    posterior[[i]]$ecases <- cases_per_time(data, state, smoothed=FALSE)
+    posterior[[i]]$scases <- cases_per_time(data, state, smoothed=TRUE)
     state <- reset_acceptance(state)
     if (chain==1) setTxtProgressBar(pb, i+control$burnin)
   }
