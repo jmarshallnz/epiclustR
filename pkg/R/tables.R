@@ -28,13 +28,9 @@ table_outbreaks <- function(mod, data, period = NULL, threshold = 0.2) {
   case_outbreaks <- case_outbreaks[case_outbreaks$P >= threshold,]
 
   # pull out the cases that correspond to these outbreaks
-  tab <- case_outbreaks %>%
-    dplyr::arrange(ReportWeek) %>%
-    dplyr::mutate(Dupes = duplicated(cbind(Region, ReportWeek, P))) %>%
-    dplyr::mutate(Region = ifelse(!Dupes, Region, ''),
-                  ReportWeek = ifelse(!Dupes, as.character(ReportWeek), ''),
-                  P = ifelse(!Dupes, P, '')) %>%
-    dplyr::select(-Dupes)
+  tab <- case_outbreaks[order(case_outbreaks$ReportWeek),]
+  dupes <- duplicated(tab[,c('Region', 'ReportWeek', 'P')])
+  tab[dupes, c('Region', 'ReportWeek', 'P')] <- ''
 
-  tab
+  tab[, c('CaseID', 'ReportWeek', 'Region', 'P')]
 }
