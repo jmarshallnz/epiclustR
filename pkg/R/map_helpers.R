@@ -66,7 +66,7 @@ five_colour_graph <- function(A) {
 
 build_region_adjacency <- function(mbrg, nb) {
   # build the LUT
-  rgmb = init_region_lut(mbrg)
+  rgmb = init_lut(mbrg)
   adj = matrix(FALSE, length(rgmb), length(rgmb))
   for (i in 1:length(rgmb)) {
     spat_in  = rgmb[[i]]
