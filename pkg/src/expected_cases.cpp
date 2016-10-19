@@ -6,15 +6,16 @@ NumericMatrix log_case_rate(const Data &data, List state, bool smoothed, Integer
 
   double       fe = state["fe"];
   NumericVector R = state["R"];
-  NumericVector U = state["U"];
+  NumericMatrix U = state["U"];
   IntegerMatrix X = state["X"];
   NumericVector betaX = state["betaX"];
 
   NumericMatrix e = no_init(data.cases.nrow(), urange.length());
   for (int t = 0; t < e.nrow(); t++) {
+    int p = data.t2p[t]-1;
     for (int i = 0; i < urange.length(); i++) {
       int u = urange[i]-1;
-      double log_e = fe + R[t] + U[u];
+      double log_e = fe + R[t] + U(u,p);
       if (!smoothed)
         log_e += X(t,data.mbrg[u]-1) * betaX[data.mbrg[u]-1];
       e(t, i) = log_e;

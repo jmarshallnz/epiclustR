@@ -6,7 +6,7 @@ class State {
   public:
     double              fe;
     Rcpp::NumericVector R;
-    Rcpp::NumericVector U;
+    Rcpp::NumericMatrix U;
     Rcpp::IntegerMatrix X;
     Rcpp::NumericVector betaX;
     double              kR;
@@ -22,7 +22,7 @@ class State {
     State(Rcpp::List s) :
       fe(Rcpp::as<double>(s["fe"])),
       R(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["R"]))),
-      U(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["U"]))),
+      U(Rcpp::clone(Rcpp::as<Rcpp::NumericMatrix>(s["U"]))),
       X(Rcpp::clone(Rcpp::as<Rcpp::IntegerMatrix>(s["X"]))),
       betaX(Rcpp::clone(Rcpp::as<Rcpp::NumericVector>(s["betaX"]))),
       kR(Rcpp::as<double>(s["kR"])),

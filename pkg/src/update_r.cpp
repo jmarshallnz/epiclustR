@@ -16,12 +16,12 @@ double r_likelihood(const Data &data,
                     const State &s,
                          NumericVector prop,
                          int j) {
-  const int n_u = s.U.length();
+  const int n_u = s.U.nrow();
   double lr = 0;
   for (int u = 0; u < n_u; u++) {
-    double l_u = s.fe + s.U[u];
     for (int i = 0; i < prop.length(); i++) {
-      double loglambda = l_u + s.X(i+j, data.mbrg[u]-1)*s.betaX[data.mbrg[u]-1];
+      int p = data.t2p[i+j]-1;
+      double loglambda =  s.fe + s.U(u,p) + s.X(i+j, data.mbrg[u]-1)*s.betaX[data.mbrg[u]-1];
       lr += Util::loglik_pois(data.cases(i+j,u), data.n[u], loglambda + s.R[i+j], loglambda + prop[i]);
     }
   }

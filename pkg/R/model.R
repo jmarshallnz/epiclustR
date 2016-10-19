@@ -57,13 +57,14 @@ init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20,
 #' @param ntimes The number of time points
 #' @param nspace The number of spatial units
 #' @param nregions The number of regions
+#' @param nperiods The number of periods
 #' @param fe The starting value for the fixed effect
 #' @param pX The starting value for pX, the probability of an outbreak
 #' @param kU,kR The starting values for the precision of spatial and temporal components.
 #' @return A list containing the model state
-init_state <- function(ntimes, nspace, nregions, fe = -10, pX = 0.1, kU = 1, kR = 1) {
+init_state <- function(ntimes, nspace, nregions, nperiods, fe = -10, pX = 0.1, kU = 1, kR = 1) {
   R = rnorm(ntimes,0,1)
-  U = rnorm(nspace,0,1)
+  U = matrix(rnorm(nperiods*nspace,0,1), nspace, nperiods)
   list(fe = fe,
        R = R - mean(R),
        U = U - mean(U),
@@ -104,7 +105,7 @@ reset_acceptance <- function(state) {
 #' @return the posterior for this chain
 fit_chain <- function(chain, data, prior, control) {
 
-  state <- init_state(nrow(data$cases), ncol(data$cases), length(data$rgmb))
+  state <- init_state(nrow(data$cases), ncol(data$cases), length(data$rgmb), length(data$p2t))
 
   if (chain == 1)
     pb <- txtProgressBar(min=0, max=control$burnin+control$samples, width=56, style=3)
@@ -132,10 +133,13 @@ fit_chain <- function(chain, data, prior, control) {
 #' @return the checked (and possibly updated) data for the model
 #' @export
 check_data <- function(data) {
-  # initialize the region lookup table
+  # initialize the region and spatial lookup tables
   if (is.null(data$mbrg))
     data$mbrg <- rep(1, ncol(data$cases))
   data$rgmb <- init_lut(data$mbrg)
+  if (is.null(data$t2p))
+    data$t2p <- rep(1, nrow(data$cases))
+  data$p2t <- init_lut(data$t2p)
 
   # check we have population where we have cases
   check_popn <- function(n, cases) {
