@@ -7,9 +7,9 @@ void sample_x(const Data &data, State &s) {
   const int n_t = s.R.length();
   const int n_r = data.rgmb.length();
   for (int r = 0; r < n_r; r++) {
+    const NumericVector &rgmb_r = data.rgmb[r];
     for (int t = 0; t < n_t; t++) {
       double loglr = 0;
-      NumericVector rgmb_r = data.rgmb[r];
       for (int j = 0; j < rgmb_r.length(); j++) {
         int u = rgmb_r[j]-1;
         double loglambda0 = s.fe + s.R[t] + s.U[u];
