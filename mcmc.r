@@ -40,5 +40,5 @@ mod <- fit_model(data, prior, control, seed = 1)
 }))
 
 # save model
-zone7 = list(data, mod)
+zone7 = list(data=data, mod=mod)
 save(list = c('zone7'), file='zone7.RData')
