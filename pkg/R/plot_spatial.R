@@ -44,7 +44,7 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
   # figure out some break-points for colours
   up_bks = quantile(map_dat$Risk[map_dat$Risk > 0], seq(1,9,by=2)/9)
   lo_bks = quantile(map_dat$Risk[map_dat$Risk < 0], seq(8,0,by=-2)/9)
-  bks = round(pmax(up_bks, lo_bks), 2)
+  bks = round(pmax(up_bks, abs(lo_bks)), 2)
 
   # define the colours
   alpha <- function(col, x = 0.5) {
