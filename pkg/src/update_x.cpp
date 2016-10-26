@@ -21,10 +21,17 @@ void sample_x(const Data &data, State &s) {
       s.X(t, r) = Util::rbernoulli(pr);
     }
   }
+//  squashProd(dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+0*rep(betaX[mbrg],each=nrow(X))), log=TRUE)-
+//             dpois(cases,rep(n,each=nrow(X))*exp(fe+rep(R,ncol(n))+rep(U,each=nrow(X))+1*rep(betaX[mbrg],each=nrow(X))), log=TRUE))
+
 //  lenR <- length(R)
 //  lambda0 <- rep(n,each=lenR)*exp(fe+rep(R,ncol(n))+rep(U,each=lenR))
 //  lambda1 <- lambda0 * exp(rep(betaX[mbrg],each=lenR))
 //  squashProd(cases * (0 - rep(betaX[mbrg],each=lenR)) - lambda0 + lambda1)
+
+//  loglambda0 <- fe+rep(R,ncol(n))+rep(U,each=lenR)
+//  loglambda1 <- lambda0 + rep(betaX[mbrg],each=lenR)
+//  squashProd(n * (exp(loglambda1) - exp(loglambda1)) - cases * (loglambda1 - loglambda0))
 }
 
 double sample_px(const IntegerMatrix &X, double aX, double bX) {
