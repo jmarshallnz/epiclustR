@@ -131,6 +131,8 @@ fit_chain <- function(chain, data, prior, control) {
 #' @export
 check_data <- function(data) {
   # initialize the region lookup table
+  if (is.null(data$mbrg))
+    data$mbrg <- rep(1, ncol(data$cases))
   data$rgmb <- init_region_lut(data$mbrg)
 
   # check we have population where we have cases
