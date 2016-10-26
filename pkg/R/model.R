@@ -62,9 +62,11 @@ init_control <- function(samples = 1000, chains = 4, thinning = 50, burnin = 20,
 #' @param kU,kR The starting values for the precision of spatial and temporal components.
 #' @return A list containing the model state
 init_state <- function(ntimes, nspace, nregions, fe = -10, pX = 0.1, kU = 1, kR = 1) {
+  R = rnorm(ntimes,0,1)
+  U = rnorm(nspace,0,1)
   list(fe = fe,
-       R  = rnorm(ntimes,0,1),
-       U = rnorm(nspace,0,1),
+       R = R - mean(R),
+       U = U - mean(U),
        X = matrix(rbinom(ntimes*nregions,1,pX), ntimes, nregions),
        betaX = rep(0.2,nregions),
        pX = pX,
