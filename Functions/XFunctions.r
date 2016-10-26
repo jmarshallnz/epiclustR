@@ -272,13 +272,13 @@ XLikelihoodRUX3 <- function(j,state) {
                       (dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+1)*betaX[mbrg]), log=TRUE)
                       +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(1+X[j+1,mbrg])*betaX[mbrg]), log=TRUE)))
   } else if (j==1) {
-    Xr <- squashProd3((dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]), log=TRUE)
-                      +dpois(cases[2,],n*exp(fe+R[2]+U+(0+X[2,mbrg])*betaX[mbrg]), log=TRUE))-
-                      (dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]), log=TRUE)
-                      +dpois(cases[2,],n*exp(fe+R[2]+U+(1+X[2,mbrg])*betaX[mbrg]), log=TRUE)))
+    Xr <- squashProd3((dpois(cases[j,],n*exp(fe+R[j]+U+0*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(0+X[j+1,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[j,],n*exp(fe+R[j]+U+1*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+(1+X[j+1,mbrg])*betaX[mbrg]), log=TRUE)))
   } else { # if j == nrow(X)
-    Xr <- squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+0)*betaX[mbrg]), log=TRUE)-
-                       dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+(X[nrow(X)-1,mbrg]+1)*betaX[mbrg]), log=TRUE))
+    Xr <- squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+0)*betaX[mbrg]), log=TRUE)-
+                      dpois(cases[j,],n*exp(fe+R[j]+U+(X[j-1,mbrg]+1)*betaX[mbrg]), log=TRUE))
   }
   Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
   matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
@@ -295,13 +295,13 @@ XLikelihoodRUX4 <- function(j,state) {
                       (dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],1)*betaX[mbrg]), log=TRUE)
                       +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(1,X[j+1,mbrg])*betaX[mbrg]), log=TRUE)))
   } else if (j==1) {
-    Xr <- squashProd3((dpois(cases[1,],n*exp(fe+R[1]+U+0*betaX[mbrg]), log=TRUE)
-                      +dpois(cases[2,],n*exp(fe+R[2]+U+pmax(0,X[2,mbrg])*betaX[mbrg]), log=TRUE))-
-                      (dpois(cases[1,],n*exp(fe+R[1]+U+1*betaX[mbrg]), log=TRUE)
-                      +dpois(cases[2,],n*exp(fe+R[2]+U+pmax(1,X[2,mbrg])*betaX[mbrg]), log=TRUE)))
+    Xr <- squashProd3((dpois(cases[j,],n*exp(fe+R[j]+U+0*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(0,X[j+1,mbrg])*betaX[mbrg]), log=TRUE))-
+                      (dpois(cases[j,],n*exp(fe+R[j]+U+1*betaX[mbrg]), log=TRUE)
+                      +dpois(cases[j+1,],n*exp(fe+R[j+1]+U+pmax(1,X[j+1,mbrg])*betaX[mbrg]), log=TRUE)))
   } else { # if j == nrow(X)
-    Xr <- squashProd3(dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],0)*betaX[mbrg]), log=TRUE)-
-                      dpois(cases[nrow(X),],n*exp(fe+R[nrow(X)]+U+pmax(X[nrow(X)-1,mbrg],1)*betaX[mbrg]), log=TRUE))
+    Xr <- squashProd3(dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],0)*betaX[mbrg]), log=TRUE)-
+                      dpois(cases[j,],n*exp(fe+R[j]+U+pmax(X[j-1,mbrg],1)*betaX[mbrg]), log=TRUE))
   }
   Xfcd <- state$pX / (Xr*(1-state$pX) + state$pX)
   matrix(rbinom(length(Xfcd),1,Xfcd),nrow(Xfcd),ncol(Xfcd))
