@@ -1,137 +1,146 @@
-# Default values
-incR<-FALSE
-incS<-FALSE
-incU<-FALSE
-incV<-FALSE
-incW<-FALSE
-incX<-FALSE
-incB<-FALSE
-Bmode<-0
-Xmode<-0
-regionchoice<-""
-tidyup<-TRUE
-iters<-12000
-burnin<-2000
-samplefreq<-10
-tps<-10
-fe<--10
-baseDeviance<-0
-mcmcpath<-zhome
-datapath<-zhome
-versioncode<-""
-dataset<-""
-Initialise <- function(region,weather="",setpriors=0,mbdataset=dataset) {
-  region<<-region
-  if (region=="MidCentral") {
-    mbs<<-1834
-    maxne<<-17
-    baseDeviance<<-21000
-  } else if (region=="MidCentral07") {
-    mbs<<-1834
-    maxne<<-17
-    baseDeviance<<-21000
-    tps<<-364
-  } else if (region=="MidCentral08") {
-    mbs<<-1743
-    maxne<<-17
-    tps<<-398
-    baseDeviance<<-21000    
-  } else if (region=="Auckland") {
-    mbs<<-3156
-    maxne<<-19
-  } else if (region=="NZ") {
-    mbs<<-1769
-    maxne<<-17
-    baseDeviance<<-20000
-  } else if (region=="HRC") {
-    mbs<<-5014
-    maxne<<-29
-    if (incR && incU) {
-      baseDeviance<<-103000
+# Default values for model
+defaults <- function() {
+  zhome <- ""
+  list(incR = FALSE,
+       incS = FALSE,
+       incU = FALSE,
+       incV = FALSE,
+       incW = FALSE,
+       incX = FALSE,
+       incB = FALSE,
+       Bmode = 0,
+       Xmode = 0,
+       region = "",
+       regionchoice = "",
+       tidyup = TRUE,
+       iters = 12000,
+       burnin = 2000,
+       samplefreq = 10,
+       mbs = 10,
+       maxne = 1,
+       tps = 10,
+       baseDeviance = 0,
+       datapath = zhome,
+       versioncode = "",
+       dataset = ""
+    )
+}
+
+Initialise <- function(region,weather="",setpriors=0) {
+  params$region <<- region
+  if (region == "MidCentral") {
+    params$mbs <<- 1834
+    params$maxne <<- 17
+    params$baseDeviance <<- 21000
+  } else if (region == "MidCentral07") {
+    params$mbs <<- 1834
+    params$maxne <<- 17
+    params$baseDeviance <<- 21000
+    params$tps <<- 364
+  } else if (region == "MidCentral08") {
+    params$mbs <<- 1743
+    params$maxne <<- 17
+    params$tps <<- 398
+    params$baseDeviance <<- 21000    
+  } else if (region == "Auckland") {
+    params$mbs <<- 3156
+    params$maxne <<- 19
+  } else if (region == "NZ") {
+    params$mbs <<- 1769
+    params$maxne <<- 17
+    params$baseDeviance <<- 20000
+  } else if (region == "HRC") {
+    params$mbs <<- 5014
+    params$maxne <<- 29
+    if (params$incR && params$incU) {
+      params$baseDeviance <<- 103000
     } else {
-      baseDeviance<<-107000
+      params$baseDeviance <<- 107000
     }
-  } else if (region=="Christchurch") {
-    mbs<<-4313
-    maxne<<-26
-    if (incR && incU) {
-      baseDeviance<<-103000
+  } else if (region == "Christchurch") {
+    params$mbs <<- 4313
+    params$maxne <<- 26
+    if (params$incR && params$incU) {
+      params$baseDeviance <<- 103000
     } else {
-      baseDeviance<<-107000
+      params$baseDeviance <<- 107000
     }
-  } else if (region=="AAuckland") {
-    baseDeviance<<-270000  
-    mbs<<-9709
-    maxne<<-19
-  } else if (region=="CC") {
-    mbs<<-1834
-    maxne<<-17
-    tps<<-98
-  } else if (region=="CC\\CCInc2007") {
-    mbs<<-1
-    tps<<-137
-    maxne<<-1
-  } else if (region=="ST") {
-    mbs<<-1834
-    maxne<<-17
-    tps<<-98
-  } else if (region=="STPaper") {
-    mbs<<-1743
-    maxne<<-17
-    if (dataset=="Rum") {
-      tps<<-149
-    } else if (dataset=="474") {
-      tps<<-147
+  } else if (region == "AAuckland") {
+    params$baseDeviance <<- 270000  
+    params$mbs <<- 9709
+    params$maxne <<- 19
+  } else if (region == "CC") {
+    params$mbs <<- 1834
+    params$maxne <<- 17
+    params$tps <<- 98
+  } else if (region == "CC\\CCInc2007") {
+    params$mbs <<- 1
+    params$tps <<- 137
+    params$maxne <<- 1
+  } else if (region == "ST") {
+    params$mbs <<- 1834
+    params$maxne <<- 17
+    params$tps <<- 98
+  } else if (region == "STPaper") {
+    params$mbs <<- 1743
+    params$maxne <<- 17
+    if (dataset == "Rum") {
+      params$tps <<- 149
+    } else if (dataset == "474") {
+      params$tps <<- 147
     } else {
-      tps<<-154
+      params$tps <<- 154
     }
-  } else if (region=="STSpace") {
-    mbs<<-1743
-    maxne<<-17
-    tps<<-154
-  } else if (region=="ST08") {
-    mbs<<-1743
-    maxne<<-17
-    tps<<-364-214
-  } else if (region=="ST\\Inc2007") {
-    mbs<<-1
-    tps<<-137
-    maxne<<-1
-  } else if (region=="ST\\STsOnly") {
-    mbs<<-1834
-    maxne<<-17
-    tps<<-98
-  } else if (region=="ST\\OnlyInc2007") {
-    mbs<<-1
-    tps<<-137
-    maxne<<-1
-  } else if (region=="MidCentralUrban") {
-    mbs<<-1292
-    tps<<-364
-  } else if (region=="MidCentralRural") {
-    mbs<<-542
-    tps<<-364
-  } else if (region=="ChristchurchUrban") {
-    mbs<<-3490
-    tps<<-312
-  } else if (region=="ChristchurchRural") {
-    mbs<<-823
-    tps<<-312
-  } else if (region=="AAucklandUrban") {
-    mbs<<-9126
-    tps<<-312
-  } else if (region=="AAucklandRural") {
-    mbs<<-574
-    tps<<-312
+  } else if (region == "STSpace") {
+    params$mbs <<- 1743
+    params$maxne <<- 17
+    params$tps <<- 154
+  } else if (region == "ST08") {
+    params$mbs <<- 1743
+    params$maxne <<- 17
+    params$tps <<- 364-214
+  } else if (region == "ST\\Inc2007") {
+    params$mbs <<- 1
+    params$tps <<- 137
+    params$maxne <<- 1
+  } else if (region == "ST\\STsOnly") {
+    params$mbs <<- 1834
+    params$maxne <<- 17
+    params$tps <<- 98
+  } else if (region == "ST\\OnlyInc2007") {
+    params$mbs <<- 1
+    params$tps <<- 137
+    params$maxne <<- 1
+  } else if (region == "MidCentralUrban") {
+    params$mbs <<- 1292
+    params$tps <<- 364
+  } else if (region == "MidCentralRural") {
+    params$mbs <<- 542
+    params$tps <<- 364
+  } else if (region == "ChristchurchUrban") {
+    params$mbs <<- 3490
+    params$tps <<- 312
+  } else if (region == "ChristchurchRural") {
+    params$mbs <<- 823
+    params$tps <<- 312
+  } else if (region == "AAucklandUrban") {
+    params$mbs <<- 9126
+    params$tps <<- 312
+  } else if (region == "AAucklandRural") {
+    params$mbs <<- 574
+    params$tps <<- 312
+  } else if (region == "Default") {
+    cat("Called with a default region - assuming that mbs/tps/maxne etc. is set\n")
   } else {
     stop("Region not recognised.\n")
-  }  
+  }
+
   # load spatial data
-  if (incU | (incB & Bmode<2)) {
-    input<-scan(paste(datapath,region,"\\Weights.GAL",sep=""))
-    weight<<-matrix(0,mbs,maxne+1)
+  if (params$incU | (params$incB & params$Bmode<2)) {
+    input<-scan(file.path(params$datapath,params$region,"Weights.GAL"))
+    weight<<-matrix(0,params$mbs,params$maxne+1)
     i<-3
-    for (j in 1:mbs) {
+    for (j in 1:params$mbs) {
       k<-input[i]
       weight[k,1]<<-input[i+1]
       for (l in 1:input[i+1]) {
@@ -140,66 +149,95 @@ Initialise <- function(region,weather="",setpriors=0,mbdataset=dataset) {
       i<-i+2+input[i+1]
     }
   }
+
   # load case data
-  input<-scan(paste(datapath,region,"\\Data",dataset,".txt",sep=""))
-  cases<<-matrix(input,tps,mbs)
+  load_cases <- function(params) {
+    input<-scan(file.path(params$datapath,params$region,paste0("Data",params$dataset,".txt")))
+    matrix(input,params$tps,params$mbs)
+  }
+  cases <<- load_cases(params)
+
   # load meshblock data
-  input<-scan(paste(datapath,region,"\\Meshblocks",mbdataset,".txt",sep=""))
-  input<-matrix(input,ncol=mbs)
-  n<<-matrix(input[2,],1,mbs)
-  if (incB) {
-    sdi<<-matrix(input[3,],1,mbs)
-    ur<<-matrix(input[4,],1,mbs)
+  load_spatial <- function(params, cases, neighbours) {
+    input<-scan(file.path(params$datapath,params$region,"Meshblocks.txt"))
+    input<-matrix(input,ncol=params$mbs)
+    n <- matrix(input[2,],1,params$mbs)
+    cat("n created, size", dim(n), "\n")
+    sdi <- NULL; ur <- NULL;
+    if (params$incB) {
+      sdi <- matrix(input[3,],1,params$mbs)
+      ur <- matrix(input[4,],1,params$mbs)
+    }
+    for (i in 1:ncol(n)) {
+      if (n[i]==0 && sum(cases[,i])>0) {
+        cat("Meshblock",i,"has population zero and some cases - population assumed to be one.\n")
+        n[i]<-1
+      }
+      if (params$incB) {
+        if (sdi[i]==0) {
+          sdi[i] <- interpolate(sdi[neighbours[i,2:neighbours[i,1]]])
+          cat("Meshblock ",i," has SDI zero - interpolated to be ",sdi[i],".\n",sep="")
+        }
+        if (ur[i]==0) {
+          ur[i] <- interpolate(ur[neighbours[i,2:neighbours[i,1]]])
+          cat("Meshblock ",i," has Urban/Rural status zero - interpolated to be ",ur[i],".\n",sep="")
+        }
+      }
+    }
+    return(list(n=n, sdi=sdi, ur=ur))
   }
-  for (i in 1:mbs) {
-    if (n[i]==0 && sum(cases[,i])>0) {
-      cat("Meshblock",i,"has population zero and some cases - population assumed to be one.\n")
-      n[i]<<-1
-    }
-    if (incB && sdi[i]==0) {
-      sdi[i]<<-interpolate(sdi[weight[i,2:weight[i,1]]])
-      cat("Meshblock ",i," has SDI zero - interpolated to be ",sdi[i],".\n",sep="")
-    }
-    if (incB && ur[i]==0) {
-      ur[i]<<-interpolate(ur[weight[i,2:weight[i,1]]])
-      cat("Meshblock ",i," has Urban/Rural status zero - interpolated to be ",ur[i],".\n",sep="")
-    }
-  }
+  o <- load_spatial(params, cases, weights)
+  n <<- o$n; sdi <<- o$sdi; ur <<- o$ur
+
   # load weather data
+  load_weather <- function(weather, params) {
+    source(file.path("Functions", "WFunctions.r"))
+    input <- scan(paste(params$datapath,params$region,"\\Weather\\",weather,".txt",sep=""))
+    matrix(1-min(wthr)+wthr,params$tps+2,params$mbs)
+  }
+
   if (weather!="") {
-    incW<<-TRUE
-    source(paste(mcmcpath,"Functions\\WFunctions.r",sep=""))
-    wthr<<-scan(paste(datapath,region,"\\Weather\\",weather,".txt",sep=""))
-    wthr<<-matrix(1-min(wthr)+wthr,tps+2,mbs)
+    params$incW <<- TRUE
+    wthr <<- load_weather(weather, params)
     WInitialise()
   }
+
   # clean up
-  if (tidyup) {
-    file.remove("fixedEffects.txt")
-    file.remove("deviance.txt")
-    file.remove("expectedCases.txt")
+  if (params$tidyup) {
+    file.remove(file.path(params$outpath, "fixedEffects.txt"))
+    file.remove(file.path(params$outpath, "deviance.txt"))
+    file.remove(file.path(params$outpath, "expectedCases.txt"))
   }
   # initialise
-  if (incR) {source(paste(mcmcpath,"Functions\\RFunctions.r",sep=""))}
-  if (incS) {source(paste(mcmcpath,"Functions\\SFunctions.r",sep=""))}
-  if (incU) {source(paste(mcmcpath,"Functions\\UFunctions.r",sep=""))}
-  if (incV) {source(paste(mcmcpath,"Functions\\VFunctions.r",sep=""))}
-  if (incX) {
-    source(paste(mcmcpath,"Functions\\XFunctions",versioncode,".r",sep=""))
-    XInitialise()
+  state <- NULL
+  if (params$incR) {
+    source(file.path("Functions", "RFunctions.r"))
+    state <- c(state, RInitialize())
   }
-  if (incB) {
-    source(paste(mcmcpath,"Functions\\BFunctions.r",sep=""))
+  if (params$incS) { source(file.path("Functions", "SFunctions.r")) }
+  if (params$incU) {
+    source(file.path("Functions", "UFunctions.r"))
+    state <- c(state, UInitialize())
+  }
+  if (params$incV) { source(file.path("Functions", "VFunctions.r")) }
+  if (params$incX) {
+    source(file.path("Functions", paste0("XFunctions", params$versioncode, ".r")))
+    state <- c(state, XInitialise())
+  }
+  if (params$incB) {
+    source(file.path("Functions", "BFunctions.r"))
     BInitialise()
   }
-  if (incR) {RSetPriors(setpriors)}
-  if (incS) {SSetPriors(setpriors)}
-  if (incU) {USetPriors(setpriors)}
-  if (incV) {VSetPriors(setpriors)}
-  if (incW) {WSetPriors(setpriors)}
-  if (incX) {XSetPriors(setpriors)}
-  if (incB) {BSetPriors(setpriors)}
+  if (params$incR) { RSetPriors(setpriors) }
+  if (params$incS) { SSetPriors(setpriors) }
+  if (params$incU) { USetPriors(setpriors) }
+  if (params$incV) { VSetPriors(setpriors) }
+  if (params$incW) { WSetPriors(setpriors) }
+  if (params$incX) { XSetPriors(setpriors) }
+  if (params$incB) { BSetPriors(setpriors) }
+  return(state)
 }
+
 interpolate <- function(v) {
   if (length(which(v>0))==0) {
     cat("forced to 1.\n")
@@ -208,44 +246,99 @@ interpolate <- function(v) {
     return(round(mean(v[v>0])))
   }
 }
-Sample <- function(i) {
-  if (incR) {RSample()}
-  if (incS) {SSample()}
-  if (incU) {USample()}
-  if (incV) {VSample()}
-  if (incW) {WSample()}
-  if (incX) {XSample(i)}
-  if (incB) {BSample()}
-  cat(fe,"\n",file="fixedEffects.txt",append=TRUE)
-  cat(Deviance(),"\n",file="deviance.txt",append=TRUE)
-  cat(ExpectedCases(),"\n",file="expectedCases.txt",append=TRUE)
-  if (incX | incS) {cat(ExpectedCases(smoothed=TRUE),"\n",file="smoothedCases.txt",append=TRUE)}  
+
+Sample <- function(state) {
+  if (params$incR) { RSample(state) }
+  if (params$incS) { SSample() }
+  if (params$incU) { USample(state) }
+  if (params$incV) { VSample() }
+  if (params$incW) { WSample() }
+  if (params$incX) { XSample(state) }
+  if (params$incB) { BSample() }
+  cat(state$fe,"\n",file=file.path(params$outpath, "fixedEffects.txt"),append=TRUE)
+  cat(Deviance(state),"\n",file=file.path(params$outpath, "deviance.txt"),append=TRUE)
+  cat(ExpectedCases(state),"\n",file=file.path(params$outpath, "expectedCases.txt"),append=TRUE)
+  if (params$incX | params$incS) {cat(ExpectedCases(state,smoothed=TRUE),"\n",file=file.path(params$outpath, "smoothedCases.txt"),append=TRUE)}
 }
-Deviance <- function() {sum(-2*log(dpois(cases[,],ECases())))-baseDeviance}
-ECases <- function(smoothed=FALSE) {
-  output<-rep(fe,tps*mbs)
-  if (incR) {output<-output+RRisk()}
-  if (incS && !smoothed) {output<-output+SRisk()}
-  if (incU) {output<-output+URisk()}
-  if (incV) {output<-output+VRisk()}
-  if (incW) {output<-output+WRisk()}
-  if (incX && !smoothed) {output<-output+XRisk()}
-  if (incB) {output<-output+BRisk()}
-  return(rep(n,each=tps)*exp(output))
+
+InitAcceptance <- function(state) {
+  if (params$incR) { state <- RInitAcceptance(state) }
+#  if (params$incS) { SSample() }
+  if (params$incU) { state <- UInitAcceptance(state) }
+#  if (params$incV) { state <- VInitAcceptance(state) }
+#  if (params$incW) { state <- WInitAcceptance(state) }
+  if (params$incX) { state <- XInitAcceptance(state) }
+#  if (params$incB) { state <- BInitAcceptance(state) }
+  return(state)
 }
-ExpectedCases <- function(smoothed=FALSE) {apply(matrix(ECases(smoothed=smoothed),tps,mbs),1,sum)}
-#  
+
+Deviance <- function(state) {
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  deviance(data, state) - params$baseDeviance
+}
+
+# expected cases per time and space
+ECases <- function(state, smoothed = FALSE) {
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  return(expected_cases(data, state, smoothed))
+}
+
+# expected number of cases per time
+ExpectedCases <- function(state, smoothed = FALSE) {
+  data <- list(cases=cases, popn=n, mbrg=mbrg, nb=weight, rgmb=wch)
+  return(cases_per_time(data, state, smoothed))
+}
+
+ReadSamples <- function(mcmc_path) {
+  # read in R
+  R <- read.table(file.path(mcmc_path, "R.txt"))
+  U <- read.table(file.path(mcmc_path, "U.txt"))
+  fe <- read.table(file.path(mcmc_path, "fixedEffects.txt"))
+  kR <- read.table(file.path(mcmc_path, "kR.txt"))
+  kU <- read.table(file.path(mcmc_path, "kU.txt"))
+  betaX <- read.table(file.path(mcmc_path, "betaX.txt"))
+  ecases <- read.table(file.path(mcmc_path, "expectedCases.txt"))
+  scases <- read.table(file.path(mcmc_path, "smoothedCases.txt"))
+  X <- read.table(file.path(mcmc_path, "fullX.txt"), colClasses='character')
+  foo <- function(x) {
+    d <- nchar(x)
+    as.integer(unlist(lapply(1:d, function(s) substr(x, d, d))))
+  }
+  Xbar <- simplify2array(lapply(seq_len(nrow(X)), function(i) { simplify2array(lapply(X[i,], foo)) } ))
+  summary(apply(R, 2, ess))
+  summary(apply(U, 2, ess))
+  mu_ecases <- apply(ecases, 2, median)
+  mu_ecases_h <- apply(ecases, 2, quantile, 0.975)
+  mu_ecases_l <- apply(ecases, 2, quantile, 0.025)
+  mu_scases <- apply(scases, 2, median)
+  mu_scases_h <- apply(scases, 2, quantile, 0.975)
+  mu_scases_l <- apply(scases, 2, quantile, 0.025)
+  plot(mu_ecases, type='l')
+  lines(mu_ecases_h, lty='dashed')
+  lines(mu_ecases_l, lty='dashed')
+  lines(mu_scases, col='red')
+  lines(mu_scases_h, col='red', lty='dashed')
+  lines(mu_scases_l, col='red', lty='dashed')
+  plot(apply(R, 2, ess), type='l')
+  sumU <- read.table(file.path(mcmc_path, "sumU.txt"))
+  plot(sumU[,1] ~ kU[,1])
+  plot(density(fe[,1]))
+  plot(density(R[,301]))
+  acf(R[,300])
+}
+
+# This *SEEMS* to be independent of model state etc.
 plotPairs<-function(variable,components=1,posteriors=TRUE,zeroCentre=FALSE,halfCentre=FALSE,useDataCentre=FALSE,matched=TRUE) {
-  input<--1
-  try(input<-scan(paste(variable,".txt",sep="")),T)
+  input <- -1
+  try(input<-scan(file.path(params$outpath, paste0(variable,".txt"))),TRUE)
   if (length(input)>1) {
-    st<-1+burnin/samplefreq
+    st<-1+params$burnin/params$samplefreq
     en<-length(input)/components
     input<-matrix(input,components,en)
     pmean<-matrix(0,1,components)
     rrisk<-matrix(0,1,components)
-    file.remove(paste("posterior",variable,".txt",sep=""))
-    if (components>1) {file.remove(paste("relativerisk",variable,".txt",sep=""))}
+    file.remove(file.path(params$outpath, paste0("posterior",variable,".txt")))
+    if (components>1) { file.remove(file.path(params$outpath, paste0("relativerisk",variable,".txt"))) }
     if (matched) {
       m<-c(min(0,input[,st:en]),max(input[,st:en]))
       if (useDataCentre) {m<-c(min(input[,st:en]),max(input[,st:en]))}
@@ -265,86 +358,71 @@ plotPairs<-function(variable,components=1,posteriors=TRUE,zeroCentre=FALSE,halfC
       plot(c(st:en),input[i,st:en],t="l",main=i,ylim=m,xlab="Iteration",ylab="")
     }
     if (posteriors) {
-      write.table(t(pmean),paste("posterior",variable,".txt",sep=""),row.names=F,col.names=F)
-      if (components>1) {write.table(t(rrisk),paste("relativerisk",variable,".txt",sep=""),row.names=F,col.names=F)}      
+      write.table(t(pmean),file.path(params$outpath, paste0("posterior",variable,".txt")),row.names=F,col.names=F)
+      if (components>1) {write.table(t(rrisk),file.path(params$outpath, paste0("relativerisk",variable,".txt")),row.names=F,col.names=F)}      
     }
     return(pmean)
   }
 }
-Convergence <- function()
+
+Convergence <- function(state)
 {
-  try(dev.off(),T)
-  pdf(paper="a4r",width=11,height=7,file="Convergence.pdf")
+  try(dev.off(),TRUE)
+  pdf(paper="a4r",width=11,height=7,file=file.path(params$outpath, "Convergence.pdf"))
   par(mfrow=c(1,2))
   fe<-plotPairs("fixedEffects",z=F)
   pMeanDeviance<-plotPairs("deviance",useDataCentre=T)
-  if (incR) {RConvergence()}
-  if (incS) {SConvergence()}
-  if (incU) {UConvergence()}
-  if (incV) {VConvergence()}
-  if (incW) {WConvergence()}
-  if (incX) {XConvergence()}
-  if (incB) {BConvergence()}
+  if (params$incR) { RConvergence() }
+  if (params$incS) { SConvergence() }
+  if (params$incU) { UConvergence(state) }
+  if (params$incV) { VConvergence() }
+  if (params$incW) { WConvergence() }
+  if (params$incX) { XConvergence(state) }
+  if (params$incB) { BConvergence() }
   dev.off()
   #
-  pdf(paper="a4r",width=11,height=7,file="Traces.pdf")
+  pdf(paper="a4r",width=11,height=7,file=file.path(params$outpath, "Traces.pdf"))
   par(mfrow=c(3,4))
-  if (incW) {WTraces()}
-  if (incV) {VTraces()}
-  if (incR) {RTraces()}
-  if (incS) {STraces()}
-  if (incU) {UTraces()}
-  if (incB) {BTraces()}
+  if (params$incW) { WTraces() }
+  if (params$incV) { VTraces() }
+  if (params$incR) { RTraces() }
+  if (params$incS) { STraces() }
+  if (params$incU) { UTraces() }
+  if (params$incB) { BTraces() }
   dev.off()
   #
-  file.remove("DIC.txt")
-  cat("Posterior Mean Deviance: ",baseDeviance+pMeanDeviance,"\n",file="DIC.txt",sep="",append=TRUE)
-  cat("Effective Parameters:    ",pMeanDeviance-Deviance(),"\n",file="DIC.txt",sep="",append=TRUE)
-  cat("DIC:                     ",baseDeviance+2*pMeanDeviance-Deviance(),"\n",file="DIC.txt",sep="",append=TRUE)
+  dic_file <- file.path(params$outpath, "DIC.txt")
+  file.remove(dic_file)
+  cat("Posterior Mean Deviance: ",params$baseDeviance+pMeanDeviance,"\n",file=dic_file,sep="",append=TRUE)
+  cat("Effective Parameters:    ",pMeanDeviance-Deviance(state),"\n",file=dic_file,sep="",append=TRUE)
+  cat("DIC:                     ",params$baseDeviance+2*pMeanDeviance-Deviance(state),"\n",file=dic_file,sep="",append=TRUE)
 }
 
 Analysis <- function()
 {
-  pdf(paper="a4r",width=11,height=7,file="Analysis.pdf")
+  pdf(paper="a4r",width=11,height=7,file=file.path(params$outpath, "Analysis.pdf"))
   par(mfrow=c(1,1))
-  if (incX) {XAnalysis()}
-  if (incW) {WAnalysis()}
-  if (incV) {VAnalysis()}
-  if (incB) {BAnalysis()}
-  if (incR) {RAnalysis()}
-  if (incS) {SAnalysis()}
-  if (incX) {XAnalysis2()}
+  if (params$incX) { XAnalysis() }
+  if (params$incW) { WAnalysis() }
+  if (params$incV) { VAnalysis() }
+  if (params$incB) { BAnalysis() }
+  if (params$incR) { RAnalysis() }
+  if (params$incS) { SAnalysis() }
+  if (params$incX) { XAnalysis2() }
   dev.off()
 }
-Retrospective <- function(samples) {
-  file.remove("DIC.txt")
-  file.remove("deviance.txt")
-  file.remove("expectedCases.txt")
-  iters<-samples*samplefreq
-  fes<-scan("fixedEffects.txt")
-  if (incR) {Rs<-matrix(scan("R.txt"),tps,samples)}
-  if (incU) {Us<-matrix(scan("U.txt"),mbs,samples)}
-  if (incW) {Ws<-matrix(scan("W.txt"),cs,samples)}
-  for (i in 1:samples) {
-    fe<<-fes[i]
-    if (incR) {R<<-Rs[,i]}
-    if (incU) {U<<-Us[,i]}
-    if (incW) {W<<-Ws[,i]}
-    cat(Deviance(),"\n",file="deviance.txt",append=TRUE)
-    cat(ExpectedCases(),"\n",file="expectedCases.txt",append=TRUE)
-  }   
-}
+
 Continue <- function() {
-  st<<--1
-  if (incR) {R<<-Upload("R",tps);kR<<-Upload("kR",1)}
-  if (incU) {U<<-Upload("U",mbs);kU<<-Upload("kU",1)}
-  if (incW) {W<<-Upload("W",cs);kW<<-Upload("kW",1)}
-  if (incB) {
-    B<<-Upload("B",Bmax)
-    kB<<-Upload("kB",Bks)
-    if (Bmode==0 | Bmode==1) {B<<-matrix(B,urs,sds)}
+  st <<- -1
+  if (params$incR) { R <<- Upload("R",tps); kR <<- Upload("kR",1) }
+  if (params$incU) { U <<- Upload("U",mbs); kU <<- Upload("kU",1) }
+  if (params$incW) { W <<- Upload("W",cs); kW <<- Upload("kW",1) }
+  if (params$incB) {
+    B <<- Upload("B", Bmax)
+    kB <<- Upload("kB", Bks)
+    if (params$Bmode==0 | params$Bmode==1) { B <<- matrix(B,urs,sds) }
   }
-  if (incX) {XContinue()}
+  if (params$incX) { XContinue() }
   if (st==-2) {
     return(FALSE)
   } else {
@@ -366,131 +444,3 @@ Upload <- function(nam,num) {
     return(-2)
   }
 }
-CumulativeInitialise <- function(wk,setpriors=0) {
-  tps<<-wk
-  cases<<-allcases[1:wk,]#Change this to account for the 'Friday factor'.
-  # initialise
-  if (incR) {source(paste(mcmcpath,"Functions\\RFunctions.r",sep=""))}
-  if (incS) {source(paste(mcmcpath,"Functions\\SFunctions.r",sep=""))}
-  if (incU) {source(paste(mcmcpath,"Functions\\UFunctions.r",sep=""))}
-  if (incV) {source(paste(mcmcpath,"Functions\\VFunctions.r",sep=""))}
-  if (incX) {
-    source(paste(mcmcpath,"Functions\\XFunctions",versioncode,".r",sep=""))
-    XFullOutput<<-TRUE
-    XInitialise()
-  }
-  if (incB) {
-    source(paste(mcmcpath,"Functions\\BFunctions.r",sep=""))
-    BInitialise()
-  }
-  if (incR) {RSetPriors(setpriors)}
-  if (incS) {SSetPriors(setpriors)}
-  if (incU) {USetPriors(setpriors)}
-  if (incV) {VSetPriors(setpriors)}
-  if (incW) {WSetPriors(setpriors)}
-  if (incX) {XSetPriors(setpriors)}
-  if (incB) {BSetPriors(setpriors)}
-}
-Warmup <- function(region) {
-  region<<-region
-  if (region=="MidCentral") {
-    mbs<<-1834
-    maxne<<-17
-    baseDeviance<<-21000
-  } else if (region=="MidCentral07") {
-    mbs<<-1834
-    maxne<<-17
-    baseDeviance<<-21000
-    tps<<-364    
-  } else if (region=="Auckland") {
-    mbs<<-3156
-    maxne<<-19
-  } else if (region=="Christchurch") {
-    mbs<<-4313
-    maxne<<-26
-    if (incR && incU) {
-      baseDeviance<<-103000
-    } else {
-      baseDeviance<<-107000
-    }
-  } else if (region=="AAuckland") {
-    baseDeviance<<-270000  
-    mbs<<-9709
-    maxne<<-19
-  } else {
-    stop("Region not recognised.\n")
-  }  
-  # load spatial data
-  input<-scan(paste(datapath,region,"\\Weights.GAL",sep=""))
-  weight<<-matrix(0,mbs,maxne+1)
-  i<-3
-  for (j in 1:mbs) {
-    k<-input[i]
-    weight[k,1]<<-input[i+1]
-    for (l in 1:input[i+1]) {
-      weight[k,1+l]<<-input[i+1+l]
-    }
-    i<-i+2+input[i+1]
-  }
-  # load case data
-  input<-scan(paste(datapath,region,"\\Data",dataset,".txt",sep=""))
-  allcases<<-matrix(input,tps,mbs)
-  # load meshblock data
-  input<-scan(paste(datapath,region,"\\Meshblocks",dataset,".txt",sep=""))
-  input<-matrix(input,5,mbs)
-  n<<-matrix(input[2,],1,mbs)
-  if (incB) {
-    sdi<<-matrix(input[3,],1,mbs)
-    ur<<-matrix(input[4,],1,mbs)
-  }
-  for (i in 1:mbs) {
-    if (n[i]==0 && sum(allcases[,i])>0) {
-      cat("Meshblock",i,"has population zero and some cases - population assumed to be one.\n")
-      n[i]<<-1
-    }
-    if (incB && sdi[i]==0) {
-      sdi[i]<<-interpolate(sdi[weight[i,2:weight[i,1]]])
-      cat("Meshblock ",i," has SDI zero - interpolated to be ",sdi[i],".\n",sep="")
-    }
-    if (incB && ur[i]==0) {
-      ur[i]<<-interpolate(ur[weight[i,2:weight[i,1]]])
-      cat("Meshblock ",i," has Urban/Rural status zero - interpolated to be ",ur[i],".\n",sep="")
-    }
-  }
-  # clean up
-  if (tidyup) {
-    file.remove("fixedEffects.txt")
-    file.remove("deviance.txt")
-    file.remove("expectedCases.txt")
-  }
-  # cumulative specific defaults
-  span<<-13
-  depth<<-13
-  stwk<<-105
-  enwk<<-tps
-  Initialise<<-CumulativeInitialise  
-}
-getmcmcweeks <- function() {
-  totweeks<-ceiling((enwk-stwk+1)/span)
-  return(stwk-1+1:totweeks)
-}
-Infer <- function(wk) {
-  allU<-scan("U.txt")
-  samples<-allU/mbs   
-  allU<-matrix(allU,mbs,samples)
-  allR<-scan("R.txt")
-  allR<-matrix(allR,wk,samples)
-  allX<-scan("fullX.txt")
-  allX<-array(allX,c(wk,rgs,samples))
-  for (d in 1:depth) {
-    getInitials()
-    for (i in (burnin/samplefreq):samples) {
-      for (j in 1:samplefreq) {
-        RCumulativeUpdate(i)
-        XCumulativeUpdate(i)
-      }
-    }   
-  }     
-}
-    
-   

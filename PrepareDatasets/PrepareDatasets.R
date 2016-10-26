@@ -21,31 +21,23 @@ library(spatstat)
 library(maptools)
 library(spdep)
 
-working_directory         <- "~/Massey/Projects/EpiclustR/PrepareDatasets/NZ"
-primary_spatial_popn_file <- "Data/SpatialData/eCAUPopn.txt"
-primary_spatial_shapefile <- "Data/NZ_shapefiles/AU2006.shp"
-epidemic_concordance_file <- "Data/SpatialData/eConcordance.txt"
-output_directory          <- "Output2"
+#primary_spatial_popn_file <- "Data/SpatialData/eCAUPopn.txt"
+primary_spatial_shapefile <- "shape_files/midcentral_phu.shp"
+#epidemic_concordance_file <- "Data/SpatialData/eConcordance.txt"
+out_dir                   <- "."
+#output_directory          <- "Output2"
 
-setwd(working_directory)
-
-source("geo_transforms.r")
-
-# create output directory
-
-out_dir <- file.path(working_directory, output_directory)
-if (!file.exists(out_dir))
-{
-  dir.create(out_dir);
-}
+source("PrepareDatasets/geo_transforms.r")
 
 # read in the primary spatial population file
-psu <- read.csv(primary_spatial_popn_file, header=T)
-head(psu)
+#psu <- read.csv(primary_spatial_popn_file, header=T)
+#head(psu)
+psu <- slot(mbs, "data")
+psu$SP_ID <- as.numeric(as.character(psu$SP_ID))
 
 # read in the primary spatial shapefile
 mbs <- readShapeSpatial(primary_spatial_shapefile)
-ids <- slot(mbs, "data")[[1]]
+ids <- psu$SP_ID
 mbs.polys <- slot(as(mbs, "SpatialPolygons"),"polygons")
 mb_coords <- matrix(0, length(ids), 2)
 for (i in 1:length(ids))
@@ -58,8 +50,8 @@ mb_coords_wgs84 <- nztm2000_to_wgs84(mb_coords[,2], mb_coords[,1])
 nbs <- poly2nb(mbs, queen=F)
 
 # see which of these ids match our population file
-mb_list <- data.frame(CAUID=c(1), Pop=c(1), Long=c(1), Lat=c(1));
-nn_list <- data.frame(id=c(1), CAUID=c(1), Pop=c(1));
+mb_list <- data.frame(SP_ID=c(1), Pop=c(1), Long=c(1), Lat=c(1));
+nn_list <- data.frame(id=c(1), SP_ID=c(1), Pop=c(1));
 nb_to_mb <- rep(0, length(nbs))
 nn <- 1;
 nm <- 1;
@@ -67,10 +59,10 @@ for (i in 1:length(nbs))
 {
   if (length(nbs[[i]]) > 0 && nbs[[i]][1] > 0)
   {
-    row <- which(psu$CAUID06 == ids[i])
+    row <- which(psu$SP_ID == ids[i])
     if (length(row) > 0)
     {
-      mb_list[nm,] <- c(ids[i], sum(psu$Pop2010[row]), mb_coords_wgs84[i,]);
+      mb_list[nm,] <- c(ids[i], sum(psu$POPULATION[row]), mb_coords_wgs84[i,]);
       nb_to_mb[i] <- nm;
       nm <- nm + 1;
     }
@@ -81,10 +73,10 @@ for (i in 1:length(nbs))
   }
   else
   {
-    row <- which(psu$CAUID06 == ids[i])
+    row <- which(psu$SP_ID == ids[i])
     if (length(row) > 0)
     {
-      pop <- sum(psu$Pop2010[row])
+      pop <- sum(psu$POPULATION[row])
       cat("Region with ID", ids[i], "has no neighbours, but is in population file (popn", pop,")\n");
       if (pop > 0)
       {
@@ -101,7 +93,7 @@ for (i in 1:length(nbs))
 # now check which of our primary spatial units in the population file has no matching shape data
 for (i in 1:nrow(psu))
 {
-  row <- which(mb_list$CAUID == psu$CAUID06[i]);
+  row <- which(mb_list$SP_ID == psu$SP_ID[i]);
   if (length(row) == 0)
     cat("Region with ID", psu$CAUID06[i], "(popn", psu$Pop2010[i], ")has no shape data\n")
 }
@@ -115,6 +107,7 @@ if (nn > 1)
   dev.off();
 }
 
+mb_list = mb_list %>% left_join(psu) %>% select(ID = SP_ID, Population = Pop, Meshblock06 = MB06)
 # read in our concordance file
 concord <- read.csv(epidemic_concordance_file, header=T)
 
@@ -123,6 +116,24 @@ if (length(u) != nrow(psu))
 {
   cat("WARNING: Number of primary spatial units in our concordance file differs from our primary spatial population file")
 }
+
+# region list stuff
+cau <- read.table("MidCentral/Regions2.txt")
+wat <- read.table("MidCentral/Regions3.txt")
+mb  <- read.table("MidCentral/Meshblocks.txt")[,1]
+mb <- cbind(mb, CAU = cau, WaterZone = wat)
+names(mb) <- c("Meshblock06", "CAU", "WaterZone")
+
+head(mb_list)
+new_mb <- mb_list %>% left_join(mb)
+
+# Now fudge some of them down
+new_mb <- new_mb %>% mutate(CAU = ifelse(CAU < 58, CAU, CAU - 2),
+                  WaterZone = ifelse(WaterZone < 23, WaterZone, WaterZone - 1))
+
+# write our Meshblocks.txt file
+write.table(new_mb, file=file.path(out_dir, "Meshblocks.txt"), row.names=F, col.names=T)
+
 
 # generate our region list
 region_map <- rep(0, nrow(mb_list));
@@ -141,9 +152,6 @@ for (i in 1:nrow(mb_list))
     region_map[i] <- which(regions == concord$TA06[row[1]])
   }
 }
-
-# write our Meshblocks.txt file
-write.table(mb_list, file=file.path(out_dir, "Meshblocks.txt"), row.names=F, col.names=F)
 
 # write our Weights.GAL file
 wf <- file.path(out_dir, "Weights.GAL");

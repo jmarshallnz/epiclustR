@@ -1,20 +1,28 @@
 # Defaults
 sigmaU<-1
-kU<-1
-U<-rnorm(mbs,0,1)
-acceptU<-matrix(0,2,1)
-rejectU<-matrix(0,2,1)
-if (tidyup) {file.remove("U.txt")}
-if (tidyup) {file.remove("kU.txt")}
-if (tidyup) {file.remove("acceptanceU.txt")}
-if (tidyup) {file.remove("sumU.txt")}
+
+UInitialize <- function() {
+  if (params$tidyup) {file.remove(file.path(params$outpath, "U.txt"))}
+  if (params$tidyup) {file.remove(file.path(params$outpath, "kU.txt"))}
+  if (params$tidyup) {file.remove(file.path(params$outpath, "acceptanceU.txt"))}
+  if (params$tidyup) {file.remove(file.path(params$outpath, "sumU.txt"))}
+
+  state <- list(acceptU = rep(0,2),
+                rejectU = rep(0,2),
+                kU = 1,
+                U = rnorm(params$mbs,0,1))
+  return(state)
+}
+
+# computes the variance of the U's for the Gibbs gamma update
 USumFunction <- function(U) {
   s<-0
-  for (i in 1:mbs) {
+  for (i in seq_along(U)) {
     s <- s + sum((U[i]-U[weight[i,2:(1+weight[i,1])]])^2)
   }
-  s/2
+  s/2 # We divide by 2 here as the above sum will count all squared distances twice.
 }
+
 USetPriors <- function(setpriors) {
   if (setpriors==0 | setpriors==1) {
     aU<<-1
@@ -27,72 +35,92 @@ USetPriors <- function(setpriors) {
     bU<<-10^-4
   }     
 }
-UUpdate <- function(i=0) {
-  # Gibb's step to update kU
-  kU<<-rgamma(1,aU+(mbs-1)/2,rate=(bU+USumFunction(U)/2))
-  for (j in 1:mbs) {
-    if (i%%2==0) {
-      proposal<-rnorm(1,mean(U[weight[j,2:(1+weight[j,1])]]),(1/kU/weight[j,1])^(0.5))
-      ap<-ULikelihood(j,proposal)
-    } else {
-      proposal<-rnorm(1,U[j],sd=sigmaU)
-      ap<-exp(-kU*sum((U[weight[j,2:(1+weight[j,1])]]-proposal)^2-(U[weight[j,2:(1+weight[j,1])]]-U[j])^2)/2)*ULikelihood(j,proposal)
-    }
-    un<-runif(1)
-    if (un<=ap) {
-      U[j]<<-proposal
-      acceptU[1+i%%2]<<-acceptU[1+i%%2]+1
-    } else {
-      rejectU[1+i%%2]<<-rejectU[1+i%%2]+1
-    }
-  }
+
+UUpdate <- function(i=0, state) {
+  # call straight into c++ land
+  update_u(cases, n, mbrg, weight, i, state, prior=list(aU=aU, bU=bU, sigmaU=sigmaU))
 }
-UUpdateCP <- function(i=0) {
-  # Gibb's step to update kU
-  kU<<-rgamma(1,aU+(mbs-1)/2,rate=(bU+USumFunction(U)/2))
-  for (j in 1:mbs) {
-    proposal<-rnorm(1,mean(U[weight[j,2:(1+weight[j,1])]]),(1/kU/weight[j,1])^(0.5))
-    ap<-ULikelihood(j,proposal)
-    un<-runif(1)
-    if (un<=ap) {
-      U[j]<<-proposal
-      acceptU[1]<<-acceptU[1]+1
-    } else {
-      rejectU[1]<<-rejectU[1]+1
-    }
-  }
+
+USample <- function(state) {
+  cat(c(t(state$U),"\n"),file=file.path(params$outpath, "U.txt"),append=TRUE,sep=" ")
+  cat(state$kU,file=file.path(params$outpath, "kU.txt"),append=TRUE,sep="\n")
+  cat(c(t(state$acceptU[]/(state$acceptU[]+state$rejectU[])),"\n"),file=file.path(params$outpath, "acceptanceU.txt"),append=TRUE,sep=" ")
+  cat(USumFunction(state$U),"\n",file=file.path(params$outpath, "sumU.txt"),append=TRUE)
 }
-USample <- function() {
-  fe<<-fe+mean(U)
-  U<<-U-mean(U) 
-  cat(c(t(U),"\n"),file="U.txt",append=TRUE,sep=" ")
-  cat(kU,file="kU.txt",append=TRUE,sep="\n")
-  cat(c(t(acceptU[]/(acceptU[]+rejectU[])),"\n"),file="acceptanceU.txt",append=TRUE,sep=" ")
-  acceptU<<-rep(0,2)
-  rejectU<<-rep(0,2)   
-  cat(USumFunction(U),"\n",file="sumU.txt",append=TRUE)
+
+UInitAcceptance <- function(state) {
+  state$acceptU <- rep(0,2)
+  state$rejectU <- rep(0,2)
+  return(state)
 }
-URisk <- function() {rep(U,each=tps)}
-ULikelihoodU <- function(j,proposal) {prod(dpois(cases[,j],n[j]*exp(fe+proposal))/dpois(cases[,j],n[j]*exp(fe+U[j])))}
-ULikelihoodRUX <- function(j,proposal) {prod(dpois(cases[,j],n[j]*exp(fe+R+proposal+betaX*X[,mbrg[j]]))/dpois(cases[,j],n[j]*exp(fe+R+U[j]+betaX*X[,mbrg[j]])))}
-ULikelihoodRUX2 <- function(j,proposal) {prod(dpois(cases[,j],n[j]*exp(fe+R+proposal+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]))/dpois(cases[,j],n[j]*exp(fe+R+U[j]+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]])))}
-ULikelihoodRUX3 <- function(j,proposal) {
-prod(dpois(cases[1,j],n[j]*exp(fe+R[1]+proposal+betaX[mbrg[j]]*X[1,mbrg[j]]))/dpois(cases[1,j],n[j]*exp(fe+R[1]+U[j]+betaX[mbrg[j]]*X[1,mbrg[j]])),dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+proposal+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])))/dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+U[j]+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]]))))
+
+URisk <- function(state) {
+  rep(state$U,each=length(state$R))
 }
-ULikelihoodRUX4 <- function(j,proposal) {
-prod(dpois(cases[1,j],n[j]*exp(fe+R[1]+proposal+betaX[mbrg[j]]*X[1,mbrg[j]]))/dpois(cases[1,j],n[j]*exp(fe+R[1]+U[j]+betaX[mbrg[j]]*X[1,mbrg[j]])),dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+proposal+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])))/dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+U[j]+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]]))))
+
+ULikelihoodU <- function(j,curr,prop,state) {
+  fe <- state$fe
+  sum(dpois(cases[,j],n[j]*exp(fe+prop), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+curr), log=TRUE))
 }
-ULikelihoodUX <- function(j,proposal) {prod(dpois(cases[,j],n[j]*exp(fe+proposal+betaX*X[,mbrg[j]]*logcases[,j]))/dpois(cases[,j],n[j]*exp(fe+U[j]+betaX*X[,mbrg[j]]*logcases[,j])))}
-ULikelihoodRU <- function(j,proposal) {prod(dpois(cases[,j],n[j]*exp(fe+R+proposal))/dpois(cases[,j],n[j]*exp(fe+R+U[j])))}
-ULikelihoodRUW <- function(j,proposal) {
-  prod(dpois(cases[,j],n[j]*exp(fe+R+proposal+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]))/dpois(cases[,j],n[j]*exp(fe+R[]+U[j]+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]])))
+ULikelihoodRUX <- function(j,curr,prop,state) {
+  fe <- state$fe
+  R  <- state$R
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+betaX*X[,mbrg[j]]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr+betaX*X[,mbrg[j]]), log=TRUE))
 }
-UConvergence <- function() {
+
+ULikelihoodRUX2 <- function(j,curr,prop,state) {
+  #  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE)-
+  #      dpois(cases[,j],n[j]*exp(fe+R+curr+rep(betaX[mbrg[j]],tps)*X[,mbrg[j]]), log=TRUE))
+  u_likelihood_rux2(cases, n, state$fe, state$R, state$X, mbrg, state$betaX,
+                    curr, prop, j)
+}
+
+ULikelihoodRUX3 <- function(j,curr,prop,state) {
+  fe <- state$fe
+  R  <- state$R
+  tps <- length(R)
+  sum(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE)-
+      dpois(cases[1,j],n[j]*exp(fe+R[1]+curr+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE),
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])), log=TRUE)-
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*(X[1:(tps-1),mbrg[j]]+X[2:tps,mbrg[j]])), log=TRUE))
+}
+ULikelihoodRUX4 <- function(j,curr,prop,state) {
+  fe <- state$fe
+  R  <- state$R
+  tps <- length(R)
+  sum(dpois(cases[1,j],n[j]*exp(fe+R[1]+prop+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE)-
+      dpois(cases[1,j],n[j]*exp(fe+R[1]+U[j]+betaX[mbrg[j]]*X[1,mbrg[j]]), log=TRUE),
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+prop+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])), log=TRUE)-
+      dpois(cases[2:tps,j],n[j]*exp(fe+R[2:tps]+curr+rep(betaX[mbrg[j]],tps-1)*pmax(X[1:(tps-1),mbrg[j]],X[2:tps,mbrg[j]])), log=TRUE))
+}
+ULikelihoodUX <- function(j,curr,prop,state) {
+  fe <- state$fe
+  # NOTE: This will fail, as logcases doesn't exist
+  sum(dpois(cases[,j],n[j]*exp(fe+prop+betaX*X[,mbrg[j]]*logcases[,j]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+curr+betaX*X[,mbrg[j]]*logcases[,j]), log=TRUE))
+}
+ULikelihoodRU <- function(j,curr,prop,state) {
+  fe <- state$fe
+  R  <- state$R
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr), log=TRUE))
+}
+ULikelihoodRUW <- function(j,curr,prop,state) {
+  tps <- params$tps
+  fe <- state$fe
+  tps <- length(R)
+  sum(dpois(cases[,j],n[j]*exp(fe+R+prop+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]), log=TRUE)-
+      dpois(cases[,j],n[j]*exp(fe+R+curr+W[wthr[3:(tps+2),j]]+W[ws+wthr[2:(tps+1),j]]+W[2*ws+wthr[1:tps,j]]), log=TRUE))
+}
+
+UConvergence <- function(state) {
   plotPairs("kU")
   plotPairs("sumU",p=F)
-  plotPairs("acceptanceU",length(acceptU),F,ha=T)
+  plotPairs("acceptanceU",length(state$acceptU),F,ha=T)
 }
+
 UTraces <- function() {
-  U<<-plotPairs("U",mbs,z=T)
+  U<<-plotPairs("U",params$mbs,z=T)
 }
-   
