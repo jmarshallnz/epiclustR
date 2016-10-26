@@ -22,8 +22,7 @@ double r_likelihood(const Data &data,
     double l_u = s.fe + s.U[u];
     for (int i = 0; i < prop.length(); i++) {
       double loglambda = l_u + s.X(i+j, data.mbrg[u]-1)*s.betaX[data.mbrg[u]-1];
-      lr += data.cases(i+j,u) * (prop[i] - s.R[i+j])
-        - data.n[u] * (::exp(loglambda + prop[i]) - ::exp(loglambda + s.R[i+j]));
+      lr += Util::loglik_pois(data.cases(i+j,u), data.n[u], loglambda + s.R[i+j], loglambda + prop[i]);
     }
   }
   return lr;

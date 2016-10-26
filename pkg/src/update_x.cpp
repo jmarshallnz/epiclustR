@@ -14,9 +14,9 @@ void sample_x(const Data &data, State &s) {
         int u = rgmb_r[j]-1;
         double loglambda0 = s.fe + s.R[t] + s.U[u];
         double loglambda1 = loglambda0 + s.betaX[r];
-        loglr += data.n[u] * (::exp(loglambda1) - ::exp(loglambda0)) - data.cases(t,u) * s.betaX[r];
+        loglr += Util::loglik_pois(data.cases(t,u), data.n[u], loglambda0, loglambda1);
       }
-      double p = s.pX / (::exp(loglr) * (1-s.pX) + s.pX);
+      double p = s.pX / (::exp(-loglr) * (1-s.pX) + s.pX);
       s.X(t, r) = Util::rbernoulli(p);
     }
   }
@@ -42,9 +42,9 @@ double betax_likelihood(const Data &data,
   for (int t = 0; t < n_t; t++) {
     for (int r = 0; r < n_r; r++) {
       int u = rgmb_j[r]-1;
-      double loglambda = s.fe + s.R[t] + s.U[u];
-      lr += data.cases(t,u) * s.X(t,j) * (prop - s.betaX[j])
-        - data.n[u] * (::exp(loglambda + s.X(t,j)*prop) - ::exp(loglambda + s.X(t,j)*s.betaX[j]));
+      double loglambda0 = s.fe + s.R[t] + s.U[u] + s.X(t,j)*s.betaX[j];
+      double loglambda1 = s.fe + s.R[t] + s.U[u] + s.X(t,j)*prop;
+      lr += Util::loglik_pois(data.cases(t,u), data.n[u], loglambda0, loglambda1);
     }
   }
   return lr;

@@ -11,8 +11,7 @@ double u_likelihood(const Data &data,
   double lr = 0;
   for (int t = 0; t < n_r; t++) {
     double loglambda = s.fe + s.R[t] + s.betaX[data.mbrg[u]-1] * s.X(t, data.mbrg[u]-1);
-    lr += data.cases(t,u) * (prop - s.U[u])
-          - data.n[u] * (::exp(loglambda+prop) - ::exp(loglambda+s.U[u]));
+    lr += Util::loglik_pois(data.cases(t,u), data.n[u], loglambda+s.U[u], loglambda+prop);
   }
   return lr;
 //  tps <- length(R)
