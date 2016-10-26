@@ -4,6 +4,20 @@
 #' @importFrom sp plot
 NULL
 
+#' Extract spatial trend(s) from an epiclustR model state
+#'
+#' @param state the model state
+#' @param data the data used to fit the model
+#' @return The spatial risk adjusted as needed for the differing means through time per period.
+extract_spatial <- function(state, data) {
+  #' pull out U and R from the posterior
+  risk <- state$U
+  for (i in seq_along(data$p2t)) {
+    risk[,i] = risk[,i] + mean(state$R[data$p2t[[i]]])
+  }
+  risk
+}
+
 #' Plot spatial trends from an epiclustR model
 #' 
 #' @param mod the model to plot
@@ -18,7 +32,17 @@ NULL
 plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=NULL) {
   map <- maptools::readShapeSpatial(shapefile)
 
-  spat_risk <- apply(ssapply(mod, extract_variable, 'U'), 1, mean)
+  spat_risk <- apply(ssapply(mod, extract_spatial, data=data), 1:2, mean)
+
+  # average out the risk over all time periods
+  spat_period <- 1:ncol(spat_risk)
+  if (!is.null(period)) {
+    spat_period = spat_period[period]
+    spat_risk   = spat_risk[,period,drop=FALSE]
+  }
+  # average across the risk (weighted sum by period length)
+  weights = lengths(spat_period)
+  spat_risk = spat_risk %*% weights / sum(weights)
 
   # grab out the outbreak data
   X <- ssapply(mod, extract_variable, 'X')
@@ -27,7 +51,7 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
   # filter down the period
   if (!is.null(period)) {
     # TODO: make this work with dates
-    mX = mX[period, ,drop=FALSE]
+    mX = mX[unlist(data$p2t[period]), ,drop=FALSE]
   }
 
   # filter down the threshold
