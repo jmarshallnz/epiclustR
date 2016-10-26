@@ -72,9 +72,30 @@ void update_u(const Data &data,
         ap = u_likelihood(data, s, proposal, u, p) - s.kU * sumU / 2;
       }
 
+      // multiply this by the proposal ratio, as we need to adjust R accordingly.
+      // If you think about the R precision matrix then that involves the two
+      // timepoints either side of the period division(s).
+      double r_prior_ratio = 0;
+      double delta_U = (proposal - s.U(u,p)) / s.U.nrow();
+      if (p > 0) {
+        int t = p2t[0]-1;
+        r_prior_ratio += s.kR * delta_U * (s.R[t-2] - 3*s.R[t-1] + 3*s.R[t] - s.R[t+1] + delta_U);
+      }
+      if (p < s.U.ncol()-1) {
+        int t = p2t[p2t.length()-1]-1;
+        r_prior_ratio += s.kR * delta_U * (s.R[t+2] - 3*s.R[t+1] + 3*s.R[t] - s.R[t-1] + delta_U);
+      }
+      ap -= r_prior_ratio;
+
       double un = R::unif_rand();
       if (ap >= 0 || un <= ::exp(ap)) {
         s.U(u,p) = proposal;
+        // also update R and U to keep constant mean
+        for (int j = 0; j < p2t.length(); j++) {
+          int t = p2t[j]-1;
+          s.R[t] += delta_U;
+        }
+        s.U(_,p) = s.U(_,p) - delta_U;
         s.acceptU[i%2]++;
       } else {
         s.rejectU[i%2]++;

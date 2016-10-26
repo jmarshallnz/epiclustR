@@ -6,10 +6,8 @@ using namespace Rcpp;
 
 void update_fe(State &s) {
   double meanR = mean(s.R);
-  double meanU = mean(s.U);
-  s.fe += meanR + meanU;
+  s.fe += meanR;
   s.R = s.R - meanR;
-  s.U = s.U - meanU;
 };
 
 //' Update the MCMC simulation
