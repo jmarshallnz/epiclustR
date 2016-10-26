@@ -30,7 +30,8 @@ week_by_mb <- tab %>% spread(Meshblock06, Cases, fill = 0)
 cases[as.character(week_by_mb$ReportWeek),names(week_by_mb)[-1]] <- as.matrix(week_by_mb[,-1])
 
 # assemble data
-data <- check_data(list(cases=cases, popn=popn, mbrg=mbrg, nb=nb))
+time_map <- ifelse(weeks < "2008-01-01", 1, 2)
+data <- check_data(list(cases=cases, popn=popn, mbrg=mbrg, nb=nb, t2p=time_map))
 data$spat_list <- spat %>% select(ID = ID, Spatial = Meshblock06, Region = Zone7)
 data$case_list <- case %>% select(CaseID = EpiSurvNumber, Spatial = Meshblock06, ReportWeek)
 

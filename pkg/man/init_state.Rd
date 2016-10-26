@@ -4,7 +4,8 @@
 \alias{init_state}
 \title{Initialize the model state}
 \usage{
-init_state(ntimes, nspace, nregions, fe = -10, pX = 0.1, kU = 1, kR = 1)
+init_state(ntimes, nspace, nregions, nperiods, fe = -10, pX = 0.1, kU = 1,
+  kR = 1)
 }
 \arguments{
 \item{ntimes}{The number of time points}
@@ -12,6 +13,8 @@ init_state(ntimes, nspace, nregions, fe = -10, pX = 0.1, kU = 1, kR = 1)
 \item{nspace}{The number of spatial units}
 
 \item{nregions}{The number of regions}
+
+\item{nperiods}{The number of periods}
 
 \item{fe}{The starting value for the fixed effect}
 

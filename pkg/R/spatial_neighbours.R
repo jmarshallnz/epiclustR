@@ -39,15 +39,15 @@ load_spatial_neighbours <- function(file) {
   spatial_matrix
 }
 
-#' Initialize the region to spatial unit lookup table
+#' Initialize a reverse lookup table from a lookup vector
 #' 
-#' @param mbrg The spatial unit to region lookup vector
-#' @return a list of the spatial units in each region
-init_region_lut <- function(mbrg) {
+#' @param luv A lookup vector mapping items to a grouping variable with levels 1 to n
+#' @return a list for reverse lookups from levels to vector entries in `luv`
+init_lut <- function(luv) {
   lut <- list()
-  rgs <- max(mbrg)
-  for (j in 1:rgs) {
-    lut[[j]] <- which(mbrg==j)
+  n <- max(luv)
+  for (j in 1:n) {
+    lut[[j]] <- which(luv==j)
   }
   lut
 }
