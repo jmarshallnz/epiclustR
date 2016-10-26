@@ -4,6 +4,14 @@
 
 using namespace Rcpp;
 
+void update_fe(State &s) {
+  double meanR = mean(s.R);
+  double meanU = mean(s.U);
+  s.fe += meanR + meanU;
+  s.R = s.R - meanR;
+  s.U = s.U - meanU;
+};
+
 //' Update the MCMC simulation
 //'
 //' @param data a list containing the data
@@ -27,6 +35,7 @@ Rcpp::List update(List data,
   for (int i = 0; i < thinning; i++) {
     update_r(d, i, s, prior, control);
     update_u(d, i, s, prior, control);
+    update_fe(s);
     update_x(d, s, prior, control);
   }
 

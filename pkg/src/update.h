@@ -20,3 +20,5 @@ void update_x(const Data &data,
                     State &state,
                     Rcpp::List prior,
                     Rcpp::List control);
+
+void update_fe(State &state);

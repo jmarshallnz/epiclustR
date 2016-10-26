@@ -74,7 +74,4 @@ void update_u(const Data &data,
       s.rejectU[i%2]++;
     }
   }
-  double meanU = mean(s.U);
-  s.fe += meanU;
-  s.U = s.U - meanU;
 }

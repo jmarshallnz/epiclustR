@@ -106,8 +106,4 @@ void update_r(const Data &data,
     }
     j += proposal.length();
   }
-
-  double meanR = mean(s.R);
-  s.fe += meanR;
-  s.R = s.R - meanR;
 }
