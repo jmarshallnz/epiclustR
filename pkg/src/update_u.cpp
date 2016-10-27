@@ -78,11 +78,11 @@ void update_u(const Data &data,
       double r_prior_ratio = 0;
       double delta_U = (proposal - s.U(u,p)) / s.U.nrow();
       if (p > 0) {
-        int t = p2t[0]-1;
+        int t = p2t[p-1]-1;
         r_prior_ratio += s.kR * delta_U * (s.R[t-2] - 3*s.R[t-1] + 3*s.R[t] - s.R[t+1] + delta_U);
       }
       if (p < s.U.ncol()-1) {
-        int t = p2t[p2t.length()-1]-1;
+        int t = p2t[p+1]-1;
         r_prior_ratio += s.kR * delta_U * (s.R[t+2] - 3*s.R[t+1] + 3*s.R[t] - s.R[t-1] + delta_U);
       }
       ap -= r_prior_ratio;
