@@ -4,8 +4,8 @@
 \alias{plot_spatial}
 \title{Plot spatial trends from an epiclustR model}
 \usage{
-plot_spatial(mod, data, shapefile, period = NULL, threshold = 0.2,
-  bbox = NULL)
+plot_spatial(mod, data, shapefile, period = NULL, threshold = NULL,
+  bbox = NULL, breaks = NULL, legend = TRUE)
 }
 \arguments{
 \item{mod}{the model to plot}
@@ -17,10 +17,14 @@ plot_spatial(mod, data, shapefile, period = NULL, threshold = 0.2,
 \item{period}{which time periods(s) to plot. Default to NULL (all times)}
 
 \item{threshold}{threshold at which to show outbreaks. Any outbreak with probability over this threshold will
-be highlighted. Defaults to 0.2}
+be highlighted. Defaults to NULL (not shown).}
 
 \item{bbox}{The bounding box to use for the map, useful for zooming in on portions. Should be a matrix. Default to NULL
 which uses the bounding box of the shapefile.}
+
+\item{breaks}{The breaks to use for the spatial map. Must be of length 10 and cover the data}
+
+\item{legend}{Whether to plot a legend or not. Defaults to TRUE.}
 }
 \description{
 Plot spatial trends from an epiclustR model

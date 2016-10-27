@@ -25,11 +25,13 @@ extract_spatial <- function(state, data) {
 #' @param shapefile the shape file to use for the map
 #' @param period which time periods(s) to plot. Default to NULL (all times)
 #' @param threshold threshold at which to show outbreaks. Any outbreak with probability over this threshold will
-#' be highlighted. Defaults to 0.2
+#' be highlighted. Defaults to NULL (not shown).
 #' @param bbox The bounding box to use for the map, useful for zooming in on portions. Should be a matrix. Default to NULL
 #' which uses the bounding box of the shapefile.
+#' @param breaks The breaks to use for the spatial map. Must be of length 10 and cover the data
+#' @param legend Whether to plot a legend or not. Defaults to TRUE.
 #' @export
-plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=NULL) {
+plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=NULL, bbox=NULL, breaks=NULL, legend=TRUE) {
   map <- maptools::readShapeSpatial(shapefile)
 
   spat_risk <- apply(ssapply(mod, extract_spatial, data=data), 1:2, mean)
@@ -56,6 +58,9 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
 
   # filter down the threshold
   outbreaks <- data.frame(Region = 1:ncol(mX), P = apply(mX, 2, max))
+  if (is.null(threshold)) {
+    threshold = 2 # nothing past this
+  }
   outbreaks <- outbreaks[outbreaks$P >= threshold,,drop=FALSE]
 
   # form the data.frame
@@ -66,9 +71,12 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
     dplyr::left_join(outbreaks, by='Region')
 
   # figure out some break-points for colours
-  up_bks = quantile(map_dat$Risk[map_dat$Risk > 0], seq(1,9,by=2)/9)
-  lo_bks = quantile(map_dat$Risk[map_dat$Risk < 0], seq(8,0,by=-2)/9)
-  bks = round(pmax(up_bks, abs(lo_bks)), 2)
+  if (is.null(breaks)) {
+    up_bks = quantile(map_dat$Risk[map_dat$Risk > 0], seq(1,9,by=2)/9)
+    lo_bks = quantile(map_dat$Risk[map_dat$Risk < 0], seq(8,0,by=-2)/9)
+    bks = round(pmax(up_bks, abs(lo_bks)), 2)
+    breaks = c(-bks, bks)
+  }
 
   # define the colours
   alpha <- function(col, x = 0.5) {
@@ -76,7 +84,7 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
   }
   brewerBrBG9 <- c("#01665E","#35978F","#80CDC1","#C7EAE5","#F5F5F5","#F6E8C3","#DFC27D","#BF812D","#8C510A")
   cols <- alpha(brewerBrBG9, 0.7)
-  vals <- cut(map_dat$Risk, breaks = c(-bks, bks))
+  vals <- cut(map_dat$Risk, breaks = breaks)
   map_col <- cols[vals]
 
   if (is.null(bbox) || !is.matrix(bbox))
@@ -85,12 +93,18 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=0.2, bbox=
   # plot the map
   sp::plot(map, col=map_col, lwd=0.02, border='grey80', xlim=bbox[1,], ylim=bbox[2,])
 
-  # overlay the outbreaks
-  red <- function(x) {
-    rgb(1, 0, 0, ifelse(is.na(x), 0, x))
+  if (nrow(outbreaks) > 0) {
+    # overlay the outbreaks
+    red <- function(x) {
+      rgb(1, 0, 0, ifelse(is.na(x), 0, x))
+    }
+    plot(map, add=TRUE, col=red(map_dat$P), border=NA)
+    if (legend)
+      legend('topright', legend=c(levels(vals), 'Outbreak'), fill = c(cols, red(1)), cex=0.6)
+  } else {
+    if (legend)
+      legend('topright', legend=levels(vals), fill = cols, cex=0.6)
   }
-  plot(map, add=TRUE, col=red(map_dat$P), border=NA)
   #  xy <- t(simplify2array(lapply(map@polygons, function(x) { x@labpt })))
   #  text(xy[!is.na(map_dat$P),1], xy[!is.na(map_dat$P),2], map_dat$Region[!is.na(map_dat$P)])
-  legend('topright', legend=c(levels(vals), 'Outbreak'), fill = c(cols, red(1)), cex=0.6)
 }
