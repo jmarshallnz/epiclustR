@@ -21,7 +21,7 @@ case <- read.csv("CaseData/cases.csv", stringsAsFactors = FALSE)
 
 case <- case %>% filter(Meshblock06 %in% spat$Meshblock06) %>%
   mutate(ReportWeek = as.Date(ReportWeek)) %>%
-  filter(Year >= 2006 & Year <= 2015)
+  filter(Year >= 2006 & Year <= 2016)
 
 # now compute the number of cases per meshblock per time
 weeks <- seq(min(case$ReportWeek), max(case$ReportWeek), by = 7)
