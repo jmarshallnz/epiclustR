@@ -24,6 +24,27 @@ NumericMatrix log_case_rate(const Data &data, List state, bool smoothed, Integer
   return e;
 }
 
+//' Computed case rate per time per space
+//'
+//' @param data a list containing the data
+//' @param state the current state of the Markov chain
+//' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+//' @param spatial the spatial locations to compute the expected cases at.
+//' @return a matrix containing the expected cases in time and space
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericMatrix log_case_rate(List data, List state, bool smoothed = false, IntegerVector spatial = IntegerVector(0)) {
+
+  // setup our objects
+  Data d(data);
+
+  if (spatial.length() == 0) {
+    spatial = seq_along(d.mbrg);
+  }
+
+  return log_case_rate(d, state, smoothed, spatial);
+}
+
 //' Computed expected cases per time per space
 //'
 //' @param data a list containing the data

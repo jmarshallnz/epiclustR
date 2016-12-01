@@ -11,6 +11,18 @@ deviance <- function(data, state) {
     .Call('epiclustR_deviance', PACKAGE = 'epiclustR', data, state)
 }
 
+#' Computed case rate per time per space
+#'
+#' @param data a list containing the data
+#' @param state the current state of the Markov chain
+#' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+#' @param spatial the spatial locations to compute the expected cases at.
+#' @return a matrix containing the expected cases in time and space
+#' @export
+log_case_rate <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
+    .Call('epiclustR_log_case_rate', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
+}
+
 #' Computed expected cases per time per space
 #'
 #' @param data a list containing the data

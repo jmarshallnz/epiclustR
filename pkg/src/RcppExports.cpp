@@ -17,6 +17,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_case_rate
+Rcpp::NumericMatrix log_case_rate(List data, List state, bool smoothed, IntegerVector spatial);
+RcppExport SEXP epiclustR_log_case_rate(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< List >::type state(stateSEXP);
+    Rcpp::traits::input_parameter< bool >::type smoothed(smoothedSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type spatial(spatialSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_case_rate(data, state, smoothed, spatial));
+    return rcpp_result_gen;
+END_RCPP
+}
 // expected_cases
 Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed, IntegerVector spatial);
 RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
