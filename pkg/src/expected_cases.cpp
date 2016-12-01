@@ -68,7 +68,7 @@ Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed = false,
   NumericMatrix e = no_init(log_lambda.nrow(), log_lambda.ncol());
   for (int t = 0; t < e.nrow(); t++) {
     for (int u = 0; u < e.ncol(); u++) {
-      e(t, u) = d.n[spatial[u]-1] * ::exp(log_lambda(t,u));
+      e(t, u) = d.n(t,spatial[u]-1) * ::exp(log_lambda(t,u));
     }
   }
 

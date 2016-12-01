@@ -15,7 +15,7 @@ double deviance(List data, List state) {
   double dev = 0;
   for (int t = 0; t < log_lambda.nrow(); t++) {
     for (int u = 0; u < log_lambda.ncol(); u++) {
-      dev += d.cases(t,u) * log_lambda(t,u) - d.n[u] * ::exp(log_lambda(t,u));
+      dev += d.cases(t,u) * log_lambda(t,u) - d.n(t,u) * ::exp(log_lambda(t,u));
     }
   }
   return -2 * dev;

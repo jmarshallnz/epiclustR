@@ -141,11 +141,16 @@ check_data <- function(data) {
     data$t2p <- rep(1, nrow(data$cases))
   data$p2t <- init_lut(data$t2p)
 
+  # expand population to population by week if it is not already
+  if (!is.matrix(data$popn)) {
+    data$popn = matrix(data$popn, nrow(data$cases), ncol(data$cases), byrow = TRUE)
+  }
   # check we have population where we have cases
   check_popn <- function(n, cases) {
-    wch <- which(n == 0 & apply(cases, 2, sum) > 0)
-    if (length(wch > 0)) {
-      cat("Setting population to 1 in spatial locations ", wch, " as we have cases there and popn=0\n")
+    wch <- which(n == 0 & cases > 0, arr.ind = TRUE)
+    if (nrow(wch) > 0) {
+      cat("Setting population to 1 in spatial locations", colnames(data$cases)[wch[,2]],
+          "at times", rownames(data$cases)[wch[,1]], "as we have cases there and popn=0\n")
     }
     n[wch] = 1
     n
