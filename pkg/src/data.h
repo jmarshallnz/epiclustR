@@ -5,7 +5,7 @@
 class Data {
   public:
     Rcpp::NumericMatrix cases;
-    Rcpp::NumericVector n;
+    Rcpp::NumericMatrix n;
     Rcpp::NumericVector mbrg;
     Rcpp::NumericMatrix nb;
     Rcpp::List          rgmb;
@@ -14,7 +14,7 @@ class Data {
 
     Data(Rcpp::List d) :
       cases(Rcpp::as<Rcpp::NumericMatrix>(d["cases"])),
-      n(Rcpp::as<Rcpp::NumericVector>(d["popn"])),
+      n(Rcpp::as<Rcpp::NumericMatrix>(d["popn"])),
       mbrg(Rcpp::as<Rcpp::NumericVector>(d["mbrg"])),
       nb(Rcpp::as<Rcpp::NumericMatrix>(d["nb"])),
       rgmb(Rcpp::as<Rcpp::List>(d["rgmb"])),

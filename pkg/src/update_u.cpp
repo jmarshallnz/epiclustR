@@ -13,7 +13,7 @@ double u_likelihood(const Data &data,
   for (int j = 0; j < n_p; j++) {
     const int t = period_p[j]-1;
     double loglambda = s.fe + s.R[t] + s.betaX[data.mbrg[u]-1] * s.X(t, data.mbrg[u]-1);
-    lr += Util::loglik_pois(data.cases(t,u), data.n[u], loglambda+s.U(u,p), loglambda+prop);
+    lr += Util::loglik_pois(data.cases(t,u), data.n(t,u), loglambda+s.U(u,p), loglambda+prop);
   }
   return lr;
 //  tps <- length(R)
