@@ -18,11 +18,9 @@ library(maptools)
 map = readShapeSpatial('../shape_files/midcentral_phu')
 spat = read.table('../Meshblocks.txt', header=TRUE)
 spat.nb = load_spatial_neighbours('../Weights.GAL')
-load('../cau2015.RData')
-cau = cau2015
-names(cau) <- c("data", "mod")
-load('../water.RData')
-load('../zone7.RData')
+load('../AU2006.Rdata'); cau = new
+load('../WaterZone.Rdata'); water = new
+load('../TA2006.Rdata'); ta = new
 ```
 
 # Introduction
@@ -310,26 +308,28 @@ plot_region(water$mod, water$data, region = 7, main = "Summerhill, Linton")
 plot_region(water$mod, water$data, region = 12, main = "Ashhurst")
 ```
 
-## Results: Seven zones
+## Results: Territorial authorities
 
-To investigate whether fewer outbreak regions would allow the detection of additional, potentially more widespread outbreaks, the fine spatial units (meshblocks) were clustered into five zones. To allow the zones to be approximately equally sized in terms of the number of spatial units, a distance matrix was generated for the spatial units, where distance between pairs was defined as the minimum number of spatial units needed to travel from one unit to another. The clustering algorithm $K$-medoids was then used to cluster the spatial units based on these distances into 7 clusters which are shown below.
+To investigate whether fewer outbreak regions would allow the detection of additional, potentially more widespread outbreaks, the fine spatial units (meshblocks) were clustered at the territorial authority level.
 
 ```{r seven zone map, fig.height=5, fig.width=5, dev='pdf',echo=FALSE}
-map_data = map@data %>% left_join(zone7$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
+map_data = map@data %>% left_join(ta$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
 library(RColorBrewer)
-pal <- brewer.pal(7, "Set2")
+pal <- brewer.pal(4, "Set2")
 plot(map, col=pal[map_data$Region], border=NA)
 ```
 
 The outbreak table shows
 ```{r seven outbreaks, message=FALSE}
-table_outbreaks(zone7$mod, zone7$data) %>% kable
+table_outbreaks(ta$mod, ta$data) %>% kable
 ```
+
+TODO: UPDATE ME
 
 All outbreaks are in the third region which corresponds to the blue region above, and includes Pahiatua and Ashhurst in addition to the Hokowhitu and Brightwater regions of Palmerston North. Only the Pahiatua outbreak of 2008 has strong evidence, with probability close to one. Interestingly the size of this outbreak is larger than indicated in the previous models, with an additional two cases included, both of which are likely to be separate, sporadic cases (one in Linton, ST-474, and one in Eketahuna, ST-1581). The outbreak plot for this region is below.
 
 ```{r seven outbreak regions, message=FALSE}
-plot_region(zone7$mod, zone7$data, region = 3, main = "Region 3")
+plot_region(ta$mod, ta$data, region = 3, main = "Region 3")
 ```
 
 # Summary
