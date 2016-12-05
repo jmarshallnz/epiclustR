@@ -1,0 +1,345 @@
+---
+title: 'epiclustR Improvements'
+subtitle: 'Contract No: RM19081'
+author: "Jonathan Marshall, mEpiLab, Massey University"
+date: "14 October 2016"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, dev = 'tikz', fig.align='center', fig.width=7)
+library(epiclustR)
+library(dplyr)
+library(RColorBrewer)
+library(maptools)
+map = readShapeSpatial('../shape_files/midcentral_phu')
+spat = read.table('../Meshblocks.txt', header=TRUE)
+spat.nb = load_spatial_neighbours('../Weights.GAL')
+load('../cau2015.RData')
+cau = cau2015
+names(cau) <- c("data", "mod")
+load('../water.RData')
+load('../zone7.RData')
+```
+
+# Introduction
+
+Campylobacteriosis is the most commonly notified disease in New Zealand. The Manawatu region has been host to a sentinel surveillance site for campylobacteriosis since 2005, where samples from all human cases are collected by the mEpiLab molecular epidemiology laboratory in the Hopkirk Research institute at Massey University for genotyping.
+
+The majority of campylobacteriosis cases are sporadic rather than being due to outbreaks, and typically identifying a source for such cases can be difficult, particularly considering the time from disease onset to notification. It is important, however, to identify which cases are potentially related to a common source, and one way that this might be done is to identify where we observe more cases than usual in a location at a particular time point.
+
+This report details recent work at improving the spatio-temporal modelling tool epiclustR. The focus is 3-fold:
+
+1. To optimise the model in terms of runtime.
+2. To simplify the model input and output to better utilise current technologies.
+3. To run the model retrospectively on campylobacteriosis data from the Manawatu region to identify any previously unidentified outbreaks.
+
+## Spatio-temporal model
+
+The spatio-temporal model in epiclustR estimates the rate of cases at fine spatial and temporal scales, and then finds where we have pockets of more cases that may be expected over and above these spatial and temporal trends. We model cases using a Poisson distribution with case rate $n_{it}\lambda_{it}$ where $n_{it}$ is the population in spatial unit $i$ for week $t$ by splitting the rate into purely temporal ($R_t$) and spatial ($U_i$) components on the log scale, with a spatio-temporal component $W_{it}$ capturing variation above each of these trends.
+$$
+\log{\lambda_{it}} = R_t + U_i + W_{it}.
+$$
+
+### Temporal trend
+
+The temporal trend for case rates is seasonal, with most cases appearing in the summer months, but the summer peak can vary in terms of location and intensity. We thus model the typical temporal trend by smoothing the weekly case rates via a second order Gaussian random walk. A second order Gaussian random walk may be thought of as a quadratic smoother. Thus, for a given week, we can estimate its case rate $R_t$ by fitting a quadratic curve through its 4 nearest neighbours as in the figure below. The violin plot represents the uncertainty in the case rate $R_t$ which depends on the precision $\tau_R$ of the temporal component which is estimated concurrently as the model is fit.
+
+```{r quadratic smoother, echo=FALSE, fig.width=4, fig.height=3}
+t = c(-2,-1,1,2)
+R = c(3,1.5,2,5)
+m = lm(R ~ poly(t, 2))
+that = seq(-2,2,by=0.02)
+plot(R ~ t, axes=FALSE, bty='n', ylab='', xlab='', ylim=c(0,5))
+Rt = predict(m, data.frame(t=0))
+y = seq(-3,3,by=0.03)
+polygon(c(dnorm(y)*0.3, -dnorm(y)*0.3), Rt + 0.3*c(y, rev(y)), col="grey70", border=NA)
+lines(predict(m, data.frame(t=that)) ~ that)
+points(0, Rt, pch=19)
+axis(1, at=-2:2, labels = c(expression(t-2, t-1, t, t+1, t+2)))
+```
+
+Fitting the quadratic by least squares and then estimating at week $t$ gives the formula
+$$
+E[R_t] = -\frac{1}{6}R_{t-2} + \frac{4}{6}R_{t-1} + \frac{4}{6}R_{t+1} - \frac{1}{6}R_{t+2},
+$$
+where suitable adjustments are made as necessary for the ends of the interval $R_1$, $R_2$, $R_{T-1}$, $R_T$ where $T$ is the final time point. For example, the equivalent estimator for the final time point $R_T$ is a linear smoother through $R_{T-2}$ and $R_{T-1}$.
+$$
+E[R_T] = 2R_{T-2} - R_{T-1}.
+$$
+
+### Spatial trend
+
+Similarly, the spatial trend is variable with case rates being typically higher in more affluent areas compared to more deprived areas, and also differing by rurality, perhaps due to differing exposures. We model this at a fine spatial scale by modelling rates at the Meshblock level, the finest level of spatial aggregation provided by Statistics New Zealand, and assume that the underlying rate is smooth through space. It is likely that the spatial variation will not be as smooth as the temporal trend, and thus we model the trend using a first order Gaussian random walk. This is equivalent to fitting a linear interpolator for each spatial location dependent on the locations surrounding it. Again there is included uncertainty allowing the surface to vary which is dependent on the precision $\tau_U$, estimated concurrently. The conditional expectation for $U_i$ is given by
+$$
+E[U_i] = \frac{1}{n_i} \sum_{j \sim i} U_j
+$$
+where $n_i$ is the number of neighbours for spatial location $i$, and the summation is over those neighbours.
+
+### Spatio-temporal outbreak detection
+
+The spatio-temporal component is what allows potential outbreaks to be detected. We model $W_{it}$ using
+$$
+W_{it} = \beta_{r[i]} X_{r[i]t}
+$$
+where $\beta$ represents the size of a potential outbreak and $X$ is a binary (0/1) variable indicating whether
+a potential outbreak exists. The $r[i]$ is a regional mapping that aggregates the fine spatial scale of the $U$  variable up to a coarser scale for outbreak detection. This is necessary to both increase the chance of detecting outbreaks that are likely scattered over wider spatial regions as well as to ensure that parameters are identifiable. If no spatial aggregation was done there would be an individual $X$ parameter per spatial location and time in addition to the $R$ and $U$ parameters, while only having one data point per spatial location and time to estimate those parameters.
+
+As they indicate outbreaks at a spatial region $r$ at time $t$, the $X$ parameters are assumed to be independent and are set to 1 with probability $p$ which is again estimated simulatenaously from the data, that is
+$$
+X_{rt} \sim \mathsf{Bernoulli}(p)
+$$
+
+## Model fitting
+
+The model is fitted within a Bayesian framework, with the following priors specified on the unknown parameters
+$$
+\begin{aligned}
+\tau_R &\sim \mathsf{Gamma(5,0.01)}\\
+\tau_U &\sim \mathsf{Gamma(1,0.5)}\\
+p & \sim \mathsf{Beta}(1,51)\\
+\beta_r & \underset{iid}{\sim} \mathsf{Gamma}(1,1)\\
+\end{aligned}
+$$
+The priors on the precisions $\tau_R$ and $\tau_U$ suggest that there is more variation in the spatial than temporal components (i.e. the temporal component will be relatively smooth) while the prior on $p$ allows for an average of one potential outbreak per year. The independent prior on $\beta_r$ suggest that outbreaks in a particular region and week are unlikely to be much larger than around 10 people unless there is strong evidence in the data, which helps constrain $\beta_r$ in the case where there are no outbreaks where $X$ would be zero so that $\beta_r$ is otherwise be unconstrained by the data.
+
+Parameters are estimated by Monte Carlo Markov Chain (MCMC) with a range of updaters for each component. The temporal component is updated using a combination of per-timepoint independent Metropolis Hastings updates and conditional block updates, with the latter providing much improved mixing. Blocks of size 4, 5, 9 and 11 are used which are co-prime in order to ensure all time points feature in the middle of blocks and not only at the ends.
+
+The updates have been improved in this current work to account for how the precision matrix of updates change at the ends of the time series, allowing them to be used for all points. Previous versions used Metropolis-Hastings updates, or blocks of length 2 for these updates which resulted in less efficient mixing. By utilising block updates at the ends of the timeseries as well as in the interior, we are able to use less thinning of the posterior, thus achieving the same number of independent posterior samples from around half the number of total iterations. At the end of each update the mean of $R_t$ is taken out into an intercept term so that its average is always zero, and then the precision $\tau_R$ is update using Gibbs sampling from its Gamma posterior.
+
+The spatial component is updated using single-site independent Metropolis Hastings updates. While this is less efficient than using block updates due to the correlation between spatial locations, the single-site updating produces posterior samples having similar autocorrelation to those of the temporal component, which after thinning are largely uncorrelated. Hence, the simplified updating scheme suffices. At the end of each update, the mean of the $U_i$ parameters is absorbed into the intercept term, leaving them with mean zero, and the precision $\tau_U$ is update using a Gibbs sampler from the Gamma posterior.
+
+The spatio-temporal component $X$ is updated using an independent Gibbs update given the $p$ and $\beta$ components, and the probability of an outbreak $p$ is then update conditional on $X$ from its Beta conditional posterior. Finally, the $\beta$ component is updated per-site using Metropolis-Hastings updates.
+
+## Computational improvements
+
+To speed up computation, the entire MCMC fitting procedure has been moved into C++ code within an R package. This has led to a significant speed up in computation, where the original R code took over 3 days to fit the model, whereas the current code takes as little as 30 minutes for the same result.
+
+Parallel MCMC chains are used to minimise the length of each chain (e.g. 4 chains of 250 samples giving 1000 samples overall) while taking advantage of the number of independent processing cores available in general desktop and laptop computers. Not only does this improve computation time, but it also allows better diagnostics for model fit, where multiple chains starting in different parts of the parameter space should result in the same parameter distributions at convergence.
+
+This speed up in processing is significant, as it allows for larger models to be run (e.g. all meshblocks in New Zealand) or for multiple runs where different outbreak regions are used in each run, allowing testing for more disperse outbreaks than might be otherwise detected, or for outbreaks that may have differing underlying epidemiology (e.g. water supplies versus general spatial regions).
+
+## The R package
+
+The fitting of the model is implemented within the R package `epiclustR`. Thus, the model can be run anywhere where R can be run. The package includes functions for setting up data, fitting the model, and generating output and reports.
+
+### Data format
+
+There are two levels of data required for the model: Case data, and spatial data. The case data can be supplied as a data frame or spreadsheet where each row represents a case. The columns required are then just the spatial location (e.g. `Meshblock`) and the time (`ReportWeek`). For consistency with EARS and the existing EpiSurv system, report weeks can be computed by the package from the notification date, where week numbers are assigned based on the Friday. i.e. Week 1 for a year is the week Saturday through Friday ending on the first Friday of that year. For this reason cases at the end of December are often assigned to the first week of the following year, which is consistent with how Episurv assigns cases to weeks and years.
+
+The spatial data required is separated into two files. The first defines the spatial unit identifiers (i.e. Meshblock identifier), the population, and the spatial aggregation of those units into regions (e.g. Census Area Unit or Water zone). Each row of this file specifies a spatial unit. The second file defines how each spatial unit relates to the others, i.e. the spatial dependency network. This can be computed from a shape file, and functions are included in the `epiclustR` package to enable this.
+
+### Model running
+
+Once the data are specified, the `construct_data` function is run, which compiles the data into the format required for model fitting. Essentially this function constructs a matrix of times by location for cases, a vector for population, and the mapping from units to regions.
+
+Next, the model fitting parameters are setup by calling `init_priors` and `init_control`. The former allows adjustment of the prior parameters discussed above, and the latter allows specification of the number of chains and iterations to run, the thinning of the posterior and the number of iterations to discard so that the chains forget their starting position before samples are taken from the posterior.
+
+Finally, the model may be fit by calling `fit_model`, passing the data, priors and control structures setup earlier as well as (optionally) specifying a seed to initialise the random number generator for repeatable runs.
+
+An example run for the MidCentral region is below.
+
+```{r, eval=FALSE}
+library(readxl)
+library(epiclustR)
+
+# Read in case data
+cases = read_excel("cases.xlsx", sheet=1)
+
+# Read in spatial data
+spat = read.csv("Meshblocks.csv")
+
+# Read in spatial neighbourhood data
+spat.nb = load_spatial_neighbours("Weights.GAL")
+
+# Construct data
+data = construct_data(case_id = cases$EpiSurvNumber,
+                      case_date = cases$ReportDate,
+                      case_spatial = cases$Meshblock06,
+                      spatial_id = spat$Meshblock06,
+                      region_id = spat$CAU,
+                      population = spat$Population,
+                      neighbours = spat.nb)
+
+# Setup the priors and control with defaults
+prior   <- init_priors()
+control <- init_control()
+
+# Fit the model
+mod <- fit_model(data, prior, control, seed = 1)
+```
+
+### Model output
+
+The output from the model is the posterior, and several functions are available for visualising and summarising model output.
+
+The `plot_traces` function is used to visualise the MCMC traces for the parameters $\tau_R$, $\tau_U$ and $p$, which are useful for assessing the convergence of temporal, spatial and outbreak components. There should be no trend present in the trace plots and each chain should overlap the other.
+
+The `plot_temporal` function produces both the smoothed (temporal only) and fitted (with outbreaks) curves through time to the data. By default the average across all spatial locations is given, but optionally curves may be produced at a given spatial location or region by specifying those.
+
+The `plot_spatial` function produces a map of the expected risk across the entire spatial region. By default the average across all time is given, but optionally maps may be produced at any given time, where outbreaks will be highlighted if any exist with probability above a specified threshold.
+
+The `plot_region` function produces a time-series and outbreak probability plot. By default all regions will be combined on the same plot, but optionally the region may be specified, allowing each region to be inspected individually for outbreaks.
+
+The `table_outbreak` function produces a table of outbreaks whose probability is above a specified threshold. An optional time range may be specified to list only outbreaks occurring within some interval, such as the most recent weeks for example.
+
+Finally, the `generate_report` function generates an HTML report which combines the above output into a single, self-contained report. Only regions with outbreaks greater than the specified threshold are presented, and a time range may be specified to restrict reporting to some time interval, such as the most recent weeks.
+
+# Potential outbreaks in the Manawatu 2006--2015
+
+```{r, echo = FALSE}
+T = 521L
+I = 1744L
+R = c(73L, 29L, 7L)
+params = as.integer(I + T + R * (T+1) + 3)
+```
+We provide an example model run and output for all cases of campylobacteriosis in the Manawatu region of New Zealand for the 10 year period from 2006 through 2015. Data used are the Episurv notifications for the region, of which there were 2215 cases.
+
+The spatial unit used is the meshblock level, of which there are `r I`. With 10 years of data we have `r T` reporting weeks, thus the 2215 cases are spread over `r T*I` spatio-temporal units. Thus, the vast majority of units have no cases.
+
+For the regional unit, initially two regions were considered: The census area unit, which aggregates meshblocks into the next finest spatial scale, yielding `r R[1]` regions, and waterzones, for which there are `r R[2]` regions, one of which consists of the 'no information' region, largely consisting of rural areas. These areas are shown below.
+
+```{r zone map, fig.height=4, fig.width=8, dev='pdf',echo=FALSE,message=FALSE}
+map_data = map@data %>% left_join(spat, by=c('MB06' = 'Meshblock06'))
+pal <- brewer.pal(5, "Set2")
+par(mfrow=c(1,2), mar=c(0,0,0,0))
+cols_cau = five_colour_map(map_data$CAU, spat.nb)
+plot(map, col=pal[cols_cau], border=NA)
+cols_water = five_colour_map(map_data$WaterZone, spat.nb)
+plot(map, col=pal[cols_water], border=NA)
+```
+
+In addition to these areas, a set of `r R[3]` larger regions was formed by clustering the meshblocks, in order to assess whether more wide-spread outbreaks might be detected by using larger regions.
+
+The models thus involve estimating `r params[1]` unknown parameters in the case of census area units, `r params[2]` parameters in the case of water zones, and `r params[3]` for the 7 larger zones. The model fitting took approximately 50 minutes for the former and 30 minutes for the latter to produce 1000 posterior samples.
+
+## Results: Census area units
+
+We start by examining the trace plots from the model fit to ensure that convergence has been reached.
+
+```{r cau traces, fig.height = 3.5}
+par(mfrow=c(3,1), mar=c(2,4,1,1))
+plot_traces(cau$mod)
+```
+
+We can see that there is a little autocorrelation present in the plots, but that the MCMC chains have converged
+as each chain is overlapping the other. The effective sample sizes in the top right are indications of the number
+of 'independent' samples from the posterior for each of these variables. In this case there is sufficient samples for us to be confident that we have explored the posterior distribution reasonably well.
+
+The temporal trend for this model fit is shown below.
+
+```{r cau temporal, fig.height=4, fig.width=8}
+plot_temporal(cau$mod, cau$data)
+```
+
+The cases are in light grey, the smooth temporal trend in black, and the potential outbreaks are shown in red above this. We can see that there are a small number of potential outbreaks identified. This may be due to the regions being quite small, and thus any outbreak needs to be very localised in order for it to be detected reliably. Using a larger outbreak area (such as the water zones, or a further aggregation of census area units) would allow detection of more disperse outbreaks.
+
+Of interest is the potential outbreak towards the end of 2012 where the model appears to over-estimate the number of cases at that time point. This is due to all cases in this week occurring in the same CAU, and thus are all part of the same potential outbreak. The overestimation is due to combining these outbreak cases with the smoothed average trend.
+
+The spatial trend is displayed below.
+```{r cau spatial, fig.width = 6, fig.height = 6, dev='pdf'}
+plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu')
+```
+
+As can be seen, there tends to be more risk in rural areas compared to urban areas, though there is lower risk on the east coast. There are outbreaks detected both within Palmerston North as well as in Pahiatua and Ashhurst, along with some with less evidence surrounding Tokomaru and Levin.
+
+A close-up look at Palmerston North is below, showing that the potential outbreak is located in Takaro.
+```{r cau palmy, fig.width = 6, fig.height = 6, dev='pdf'}
+plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu',
+             bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
+```
+
+The table of outbreaks is shown below, with a threshold of 0.2 used to show any regions for which we have a probability of 20% that there are more cases in a particular week than we would expect.
+
+```{r cau table, message=FALSE}
+table_outbreaks(cau$mod, cau$data) %>% kable
+```
+
+We see that there are potential outbreaks in regions 29 (Takaro), 44 (Ashhurst) and 62 (Tokomaru), and multiple potential outbreaks in regions 2 (Levin) and 15 (Pahiatua). The outbreak series for these regions are below.
+
+```{r cau outbreaks, fig.width = 6, fig.height = 8}
+par(mfrow=c(5,1), mar = c(3,3,2,2))
+plot_region(cau$mod, cau$data, region = 29, main = "Takaro")
+plot_region(cau$mod, cau$data, region = 44, main = "Ashhurst")
+plot_region(cau$mod, cau$data, region = 62, main = "Tokomaru")
+plot_region(cau$mod, cau$data, region = 2, main = "Levin")
+plot_region(cau$mod, cau$data, region = 15, main = "Pahiatua")
+```
+
+Of note is the large, known, water associated outbreak in Pahiatua in August 2008. These cases have been shown in other work to be highly ruminant associated through genotyping. Interestingly, this was preceeded by a potential outbreak in Levin the week before, though this covered only 3 cases which may just be a chance occurrence (the outbreak probability is not particularly high). The August 2008 Pahiatua outbreak is the only large outbreak detected, with all others involving 4 cases or fewer. For the majority of these smaller outbreaks we don't have sufficient genotype information to assess whether they may be related genetically, with the exception of the Ashhurst outbreak in 2007, where 3 of the 4 cases share the same genotype, ST-38.
+
+## Results: Water zones
+
+The temporal trend for this model fit is shown below.
+
+```{r water temporal, fig.height=4, fig.width=8}
+plot_temporal(water$mod, water$data)
+```
+
+There are more outbreaks that reach the 20% threshold in the water zones compared to the census area units, which is likely the result of fewer, and thus larger, regions. The spatial trend is displayed below.
+
+```{r water spatial, fig.width = 6, fig.height = 6, dev='pdf'}
+plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu')
+```
+
+Interestingly the same areas around Pahiatua, Ashhurst and Palmerston North are showing up, along with a potential outbreak for which there is less evidence around Summerhill and Linton south of Palmerston North. A closer look of the Palmerston North surroundings is below.
+
+```{r water spatial horowhenua, fig.width = 6, fig.height = 6, dev='pdf'}
+plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu',
+             bbox = matrix(c(2722946,6081900,2739889,6099322), 2))
+```
+
+The outbreaks are tabulated below.
+
+```{r water table, message=FALSE}
+table_outbreaks(water$mod, water$data) %>% kable
+```
+
+We see there are multiple outbreaks in regions 5 (Pahiatua) and 6 (Palmerston North), two smaller potential outbreaks of just two cases each in region 7 (Summerhill, Linton) and one outbreak in region 12 (Ashhurst), consisting of the same cases as found using the census area units.
+
+The genotype information for these cases (where available) suggests that the March 2006 Palmerston North outbreak is likely poultry associated (ST-48, ST-50 and ST-474) while the July 2006 outbreak may be a mix, or may involve unrelated cases (ST-48, ST-474, ST-61). The large 2008 Pahiatua outbreak consists of the same set of cases as earlier which are ruminant associated, while for the remaining outbreaks there is insufficient genotype information to make any further inference. The outbreak plots for these regions are below
+
+```{r water outbreaks, fig.width = 6, fig.height = 8}
+par(mfrow=c(4,1), mar = c(3,3,2,2))
+plot_region(water$mod, water$data, region = 5, main = "Pahiatua")
+plot_region(water$mod, water$data, region = 6, main = "Palmerston North")
+plot_region(water$mod, water$data, region = 7, main = "Summerhill, Linton")
+plot_region(water$mod, water$data, region = 12, main = "Ashhurst")
+```
+
+## Results: Seven zones
+
+To investigate whether fewer outbreak regions would allow the detection of additional, potentially more widespread outbreaks, the fine spatial units (meshblocks) were clustered into five zones. To allow the zones to be approximately equally sized in terms of the number of spatial units, a distance matrix was generated for the spatial units, where distance between pairs was defined as the minimum number of spatial units needed to travel from one unit to another. The clustering algorithm $K$-medoids was then used to cluster the spatial units based on these distances into 7 clusters which are shown below.
+
+```{r seven zone map, fig.height=5, fig.width=5, dev='pdf',echo=FALSE}
+map_data = map@data %>% left_join(zone7$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
+library(RColorBrewer)
+pal <- brewer.pal(7, "Set2")
+plot(map, col=pal[map_data$Region], border=NA)
+```
+
+The outbreak table shows
+```{r seven outbreaks, message=FALSE}
+table_outbreaks(zone7$mod, zone7$data) %>% kable
+```
+
+All outbreaks are in the third region which corresponds to the blue region above, and includes Pahiatua and Ashhurst in addition to the Hokowhitu and Brightwater regions of Palmerston North. Only the Pahiatua outbreak of 2008 has strong evidence, with probability close to one. Interestingly the size of this outbreak is larger than indicated in the previous models, with an additional two cases included, both of which are likely to be separate, sporadic cases (one in Linton, ST-474, and one in Eketahuna, ST-1581). The outbreak plot for this region is below.
+
+```{r seven outbreak regions, message=FALSE}
+plot_region(zone7$mod, zone7$data, region = 3, main = "Region 3")
+```
+
+# Summary
+
+The epiclustR model has been greatly improved in terms of runtime and ease of use. The runtime was reduced by a factor of approximately 150 meaning multiple runs can be done to allow different epidemiological questions to be explored.
+
+Moving the model fitting framework into an R package means it can be more easily deployed onto any system running R, and the output functions allow rapid production of tabular and graphical summaries of the model fit.
+
+A study of the last 10 years of campylobacteriosis in the Manawatu primarily highlighed the previously known water associated outbreak in Pahiatua in 2008, where 10 cases resulted, all of which were associated with ruminant sources. A further potential outbreak in Ashhurst in 2007 of 4 cases was detected, and genotyping information from these cases suggests they may be linked. Of the other potential outbreaks, most are small and have less evidence (a lower probability).
+
+It is important that the outbreak regions are set at the appropriate scale for detection of outbreaks. Strong, localised outbreaks are likely to be detected regardless of region size, while less strong, more disperse outbreaks will require larger outbreak areas. Choosing an appropriate scale is difficult. For example, none of the regions used in this study detected the raw milk associated outbreak in May 2011 which was relatively disperse across and around Palmerston North. This was previously detected by running epiclustR across all of New Zealand, where the fine spatial units were census area units, and outbreak areas were territorial authorities. If outbreak regions were better chosen to reflect sources of risk (e.g. by using areas likely to be served by the same raw milk suppliers) then they're likely to better detect outbreaks due to that source.
+
+Future development for epiclustR might focus around how to model likely outbreaks by utilising less stringent definitions of regions in space and time. For example, a multi-level hierarchy of regions might be used to try and capture both highly localised as well as more disperse outbreaks. Alternatively, a non-parameteric model of the excess cases over and above the spatial and temporal trends might be used to scan for localised clustering accounting for the distance in space and time between pairs of cases.
