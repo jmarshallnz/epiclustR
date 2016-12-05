@@ -46,7 +46,7 @@ $$
 
 The temporal trend for case rates is seasonal, with most cases appearing in the summer months, but the summer peak can vary in terms of location and intensity. We thus model the typical temporal trend by smoothing the weekly case rates via a second order Gaussian random walk. A second order Gaussian random walk may be thought of as a quadratic smoother. Thus, for a given week, we can estimate its case rate $R_t$ by fitting a quadratic curve through its 4 nearest neighbours as in the figure below. The violin plot represents the uncertainty in the case rate $R_t$ which depends on the precision $\tau_R$ of the temporal component which is estimated concurrently as the model is fit.
 
-```{r quadratic smoother, echo=FALSE, fig.width=4, fig.height=3}
+```{r quadratic_smoother, echo=FALSE, fig.width=4, fig.height=3}
 t = c(-2,-1,1,2)
 R = c(3,1.5,2,5)
 m = lm(R ~ poly(t, 2))
@@ -200,7 +200,7 @@ The spatial unit used is the meshblock level, of which there are `r I`. With 10 
 
 For the regional unit, initially two regions were considered: The census area unit, which aggregates meshblocks into the next finest spatial scale, yielding `r R[1]` regions, and waterzones, for which there are `r R[2]` regions, one of which consists of the 'no information' region, largely consisting of rural areas. These areas are shown below.
 
-```{r zone map, fig.height=4, fig.width=8, dev='pdf',echo=FALSE,message=FALSE}
+```{r zone_map, fig.height=4, fig.width=8, dev='pdf',echo=FALSE,message=FALSE}
 map_data = map@data %>% left_join(spat, by=c('MB06' = 'Meshblock06'))
 pal <- brewer.pal(5, "Set2")
 par(mfrow=c(1,2), mar=c(0,0,0,0))
@@ -218,7 +218,7 @@ The models thus involve estimating `r params[1]` unknown parameters in the case 
 
 We start by examining the trace plots from the model fit to ensure that convergence has been reached.
 
-```{r cau traces, fig.height = 3.5}
+```{r cau_traces, fig.height = 3.5}
 par(mfrow=c(3,1), mar=c(2,4,1,1))
 plot_traces(cau$mod)
 ```
@@ -229,7 +229,7 @@ of 'independent' samples from the posterior for each of these variables. In this
 
 The temporal trend for this model fit is shown below.
 
-```{r cau temporal, fig.height=4, fig.width=8}
+```{r cau_temporal, fig.height=4, fig.width=8}
 plot_temporal(cau$mod, cau$data)
 ```
 
@@ -238,27 +238,27 @@ The cases are in light grey, the smooth temporal trend in black, and the potenti
 Of interest is the potential outbreak towards the end of 2012 where the model appears to over-estimate the number of cases at that time point. This is due to all cases in this week occurring in the same CAU, and thus are all part of the same potential outbreak. The overestimation is due to combining these outbreak cases with the smoothed average trend.
 
 The spatial trend is displayed below.
-```{r cau spatial, fig.width = 6, fig.height = 6, dev='pdf'}
+```{r cau_spatial, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu')
 ```
 
 As can be seen, there tends to be more risk in rural areas compared to urban areas, though there is lower risk on the east coast. There are outbreaks detected both within Palmerston North as well as in Pahiatua and Ashhurst, along with some with less evidence surrounding Tokomaru and Levin.
 
 A close-up look at Palmerston North is below, showing that the potential outbreak is located in Takaro.
-```{r cau palmy, fig.width = 6, fig.height = 6, dev='pdf'}
+```{r cau_palmy, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu',
              bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
 ```
 
 The table of outbreaks is shown below, with a threshold of 0.2 used to show any regions for which we have a probability of 20% that there are more cases in a particular week than we would expect.
 
-```{r cau table, message=FALSE}
+```{r cau_table, message=FALSE}
 table_outbreaks(cau$mod, cau$data) %>% kable
 ```
 
 We see that there are potential outbreaks in regions 29 (Takaro), 44 (Ashhurst) and 62 (Tokomaru), and multiple potential outbreaks in regions 2 (Levin) and 15 (Pahiatua). The outbreak series for these regions are below.
 
-```{r cau outbreaks, fig.width = 6, fig.height = 8}
+```{r cau_outbreaks, fig.width = 6, fig.height = 8}
 par(mfrow=c(5,1), mar = c(3,3,2,2))
 plot_region(cau$mod, cau$data, region = 29, main = "Takaro")
 plot_region(cau$mod, cau$data, region = 44, main = "Ashhurst")
@@ -273,26 +273,26 @@ Of note is the large, known, water associated outbreak in Pahiatua in August 200
 
 The temporal trend for this model fit is shown below.
 
-```{r water temporal, fig.height=4, fig.width=8}
+```{r water_temporal, fig.height=4, fig.width=8}
 plot_temporal(water$mod, water$data)
 ```
 
 There are more outbreaks that reach the 20% threshold in the water zones compared to the census area units, which is likely the result of fewer, and thus larger, regions. The spatial trend is displayed below.
 
-```{r water spatial, fig.width = 6, fig.height = 6, dev='pdf'}
+```{r water_spatial, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu')
 ```
 
 Interestingly the same areas around Pahiatua, Ashhurst and Palmerston North are showing up, along with a potential outbreak for which there is less evidence around Summerhill and Linton south of Palmerston North. A closer look of the Palmerston North surroundings is below.
 
-```{r water spatial horowhenua, fig.width = 6, fig.height = 6, dev='pdf'}
+```{r water_spatial_horowhenua, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu',
              bbox = matrix(c(2722946,6081900,2739889,6099322), 2))
 ```
 
 The outbreaks are tabulated below.
 
-```{r water table, message=FALSE}
+```{r water_table, message=FALSE}
 table_outbreaks(water$mod, water$data) %>% kable
 ```
 
@@ -300,7 +300,7 @@ We see there are multiple outbreaks in regions 5 (Pahiatua) and 6 (Palmerston No
 
 The genotype information for these cases (where available) suggests that the March 2006 Palmerston North outbreak is likely poultry associated (ST-48, ST-50 and ST-474) while the July 2006 outbreak may be a mix, or may involve unrelated cases (ST-48, ST-474, ST-61). The large 2008 Pahiatua outbreak consists of the same set of cases as earlier which are ruminant associated, while for the remaining outbreaks there is insufficient genotype information to make any further inference. The outbreak plots for these regions are below
 
-```{r water outbreaks, fig.width = 6, fig.height = 8}
+```{r water_outbreaks, fig.width = 6, fig.height = 8}
 par(mfrow=c(4,1), mar = c(3,3,2,2))
 plot_region(water$mod, water$data, region = 5, main = "Pahiatua")
 plot_region(water$mod, water$data, region = 6, main = "Palmerston North")
@@ -312,7 +312,7 @@ plot_region(water$mod, water$data, region = 12, main = "Ashhurst")
 
 To investigate whether fewer outbreak regions would allow the detection of additional, potentially more widespread outbreaks, the fine spatial units (meshblocks) were clustered at the territorial authority level.
 
-```{r seven zone map, fig.height=5, fig.width=5, dev='pdf',echo=FALSE}
+```{r ta_map, fig.height=5, fig.width=5, dev='pdf',echo=FALSE}
 map_data = map@data %>% left_join(ta$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
 library(RColorBrewer)
 pal <- brewer.pal(4, "Set2")
@@ -320,7 +320,7 @@ plot(map, col=pal[map_data$Region], border=NA)
 ```
 
 The outbreak table shows
-```{r seven outbreaks, message=FALSE}
+```{r ta_outbreaks, message=FALSE}
 table_outbreaks(ta$mod, ta$data) %>% kable
 ```
 
@@ -328,7 +328,7 @@ TODO: UPDATE ME
 
 All outbreaks are in the third region which corresponds to the blue region above, and includes Pahiatua and Ashhurst in addition to the Hokowhitu and Brightwater regions of Palmerston North. Only the Pahiatua outbreak of 2008 has strong evidence, with probability close to one. Interestingly the size of this outbreak is larger than indicated in the previous models, with an additional two cases included, both of which are likely to be separate, sporadic cases (one in Linton, ST-474, and one in Eketahuna, ST-1581). The outbreak plot for this region is below.
 
-```{r seven outbreak regions, message=FALSE}
+```{r ta_outbreak_regions, message=FALSE}
 plot_region(ta$mod, ta$data, region = 3, main = "Region 3")
 ```
 
