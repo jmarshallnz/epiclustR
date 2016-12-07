@@ -2,7 +2,7 @@
 title: 'epiclustR Improvements'
 subtitle: 'Contract No: RM19081'
 author: "Jonathan Marshall, mEpiLab, Massey University"
-date: "14 October 2016"
+date: "7 December 2016"
 output:
   pdf_document: default
   html_document: default
@@ -77,6 +77,12 @@ E[U_i] = \frac{1}{n_i} \sum_{j \sim i} U_j
 $$
 where $n_i$ is the number of neighbours for spatial location $i$, and the summation is over those neighbours.
 
+A major intervention focused on reducing the counts of *Campylobacter* on poultry carcases in the poultry industry was put in place in 2007/2008. We know from previous source attribution work that this resulted in a decrease in cases attributed to poultry which tended to be a higher proportion of urban cases compared to rural cases. Thus, we would expect the spatial risk to differ pre-2008 and post-2008, with fewer urban cases since 2008. Currently we assume the spatial risk $U_i$ is constant through time, but clearly this will not be the case. By assuming it is constant in the case where it isn't, we might expect the spatial risk in urban areas to be underestimated pre-2008 and overestimated post-2008, thus potentially identifying potential outbreaks in urban areas pre-2008 that actually just represent the increased risk before then, and potentially missing outbreaks post-2008 due to the average risk through space in urban areas being overestimated.
+
+To remedy this we introduce separate spatial trends $U_i$ for the differing time periods, adding the time periods on either side of the current period as neighbours to meshblock $U_i$ in the estimated mean above. Thus, we allow differing spatial trends before and after the poultry intervention.
+
+In principle this could be extended to yearly spatial trends or an even finer scale, eventually yielding a fully spatio-temporal risk surface, but this becomes computationally expensive, and would also require careful tuning to ensure the temporal and spatial correlations were correctly specified. For now, we use just two spatial surfaces pre and post 2008.
+
 ### Spatio-temporal outbreak detection
 
 The spatio-temporal component is what allows potential outbreaks to be detected. We model $W_{it}$ using
@@ -132,7 +138,7 @@ The spatial data required is separated into two files. The first defines the spa
 
 ### Model running
 
-Once the data are specified, the `construct_data` function is run, which compiles the data into the format required for model fitting. Essentially this function constructs a matrix of times by location for cases, a vector for population, and the mapping from units to regions.
+Once the data are specified, the `check_data` function is run, which compiles the data into the format required for model fitting. Essentially this function constructs a matrix of times by location for cases, a vector for population, and the mapping from units to regions.
 
 Next, the model fitting parameters are setup by calling `init_priors` and `init_control`. The former allows adjustment of the prior parameters discussed above, and the latter allows specification of the number of chains and iterations to run, the thinning of the posterior and the number of iterations to discard so that the chains forget their starting position before samples are taken from the posterior.
 
@@ -157,6 +163,7 @@ spat.nb = load_spatial_neighbours("Weights.GAL")
 data = construct_data(case_id = cases$EpiSurvNumber,
                       case_date = cases$ReportDate,
                       case_spatial = cases$Meshblock06,
+                      case_period = cases$Period,
                       spatial_id = spat$Meshblock06,
                       region_id = spat$CAU,
                       population = spat$Population,
@@ -164,7 +171,7 @@ data = construct_data(case_id = cases$EpiSurvNumber,
 
 # Setup the priors and control with defaults
 prior   <- init_priors()
-control <- init_control()
+control <- init_control(thinning=50, samples=1000, burnin=20)
 
 # Fit the model
 mod <- fit_model(data, prior, control, seed = 1)
@@ -178,7 +185,7 @@ The `plot_traces` function is used to visualise the MCMC traces for the paramete
 
 The `plot_temporal` function produces both the smoothed (temporal only) and fitted (with outbreaks) curves through time to the data. By default the average across all spatial locations is given, but optionally curves may be produced at a given spatial location or region by specifying those.
 
-The `plot_spatial` function produces a map of the expected risk across the entire spatial region. By default the average across all time is given, but optionally maps may be produced at any given time, where outbreaks will be highlighted if any exist with probability above a specified threshold.
+The `plot_spatial` function produces a map of the expected risk across the entire spatial region for a given time period. By default the average across all time periods are given, but optionally maps may be produced at any given time period (e.g. for visualising pre- and post-2008), or for any week, where outbreaks will be highlighted if any exist with probability above a specified threshold.
 
 The `plot_region` function produces a time-series and outbreak probability plot. By default all regions will be combined on the same plot, but optionally the region may be specified, allowing each region to be inspected individually for outbreaks.
 
@@ -191,7 +198,7 @@ Finally, the `generate_report` function generates an HTML report which combines 
 ```{r, echo = FALSE}
 T = 521L
 I = 1744L
-R = c(73L, 29L, 7L)
+R = c(73L, 29L, 4L)
 params = as.integer(I + T + R * (T+1) + 3)
 ```
 We provide an example model run and output for all cases of campylobacteriosis in the Manawatu region of New Zealand for the 10 year period from 2006 through 2015. Data used are the Episurv notifications for the region, of which there were 2215 cases.
@@ -210,9 +217,9 @@ cols_water = five_colour_map(map_data$WaterZone, spat.nb)
 plot(map, col=pal[cols_water], border=NA)
 ```
 
-In addition to these areas, a set of `r R[3]` larger regions was formed by clustering the meshblocks, in order to assess whether more wide-spread outbreaks might be detected by using larger regions.
+In addition to these areas, a set of `r R[3]` larger regions was formed using the territorial authority areas, in order to assess whether more wide-spread outbreaks might be detected by using larger regions.
 
-The models thus involve estimating `r params[1]` unknown parameters in the case of census area units, `r params[2]` parameters in the case of water zones, and `r params[3]` for the 7 larger zones. The model fitting took approximately 50 minutes for the former and 30 minutes for the latter to produce 1000 posterior samples.
+The models thus involve estimating `r params[1]` unknown parameters in the case of census area units, `r params[2]` parameters in the case of water zones, and `r params[3]` for the territorial authorities. The model fitting took approximately 50 minutes for the former and 30 minutes for the latter to produce 1000 posterior samples.
 
 ## Results: Census area units
 
@@ -237,16 +244,29 @@ The cases are in light grey, the smooth temporal trend in black, and the potenti
 
 Of interest is the potential outbreak towards the end of 2012 where the model appears to over-estimate the number of cases at that time point. This is due to all cases in this week occurring in the same CAU, and thus are all part of the same potential outbreak. The overestimation is due to combining these outbreak cases with the smoothed average trend.
 
-The spatial trend is displayed below.
-```{r cau_spatial, fig.width = 6, fig.height = 6, dev='pdf'}
-plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu')
+The spatial trends pre and post 2008 are displayed below.
+```{r cau_spatial, fig.width = 8, fig.height = 5, dev='pdf'}
+par(mfrow=c(1,2), mai=rep(0,4))
+plot_spatial(cau$mod, cau$data, period=1, legend=FALSE, threshold=0.2,
+             breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
+             shapefile='../shape_files/midcentral_phu')
+plot_spatial(cau$mod, cau$data, period=2, threshold=0.2,
+             breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
+             shapefile='../shape_files/midcentral_phu')
 ```
 
-As can be seen, there tends to be more risk in rural areas compared to urban areas, though there is lower risk on the east coast. There are outbreaks detected both within Palmerston North as well as in Pahiatua and Ashhurst, along with some with less evidence surrounding Tokomaru and Levin.
+As can be seen, there tends to be more risk in rural areas compared to urban areas, though there is lower risk on the east coast, though there are little data there. There is a clear decrease in risk in Palmerston North after 2008, corresponding to fewer urban cases. There are outbreaks detected both within Palmerston North as well as in Pahiatua and Ashhurst, along with some with less evidence surrounding Tokomaru and Levin.
 
-A close-up look at Palmerston North is below, showing that the potential outbreak is located in Takaro.
-```{r cau_palmy, fig.width = 6, fig.height = 6, dev='pdf'}
-plot_spatial(cau$mod, cau$data, '../shape_files/midcentral_phu',
+A close-up look at Palmerston North is below which clearly shows the decrease in risk since 2008. It also shows a potential outbreak located in Highbury after 2008.
+```{r cau_palmy, fig.width = 8, fig.height = 5, dev='pdf'}
+par(mfrow=c(1,2), mai=rep(0,4))
+plot_spatial(cau$mod, cau$data, period=1, legend=FALSE, threshold=0.2,
+             breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
+             shapefile='../shape_files/midcentral_phu',
+             bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
+plot_spatial(cau$mod, cau$data, period=2, threshold=0.2,
+             breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
+             shapefile='../shape_files/midcentral_phu',
              bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
 ```
 
@@ -256,15 +276,15 @@ The table of outbreaks is shown below, with a threshold of 0.2 used to show any 
 table_outbreaks(cau$mod, cau$data) %>% kable
 ```
 
-We see that there are potential outbreaks in regions 29 (Takaro), 44 (Ashhurst) and 62 (Tokomaru), and multiple potential outbreaks in regions 2 (Levin) and 15 (Pahiatua). The outbreak series for these regions are below.
+We see that there are potential outbreaks in regions 45 (Highbury), 10 (Ashhurst) and 61 (Waiopehu), and multiple potential outbreaks in regions 69 (Levin) and 71 (Pahiatua). The outbreak series for these regions are below.
 
 ```{r cau_outbreaks, fig.width = 6, fig.height = 8}
 par(mfrow=c(5,1), mar = c(3,3,2,2))
-plot_region(cau$mod, cau$data, region = 29, main = "Takaro")
-plot_region(cau$mod, cau$data, region = 44, main = "Ashhurst")
-plot_region(cau$mod, cau$data, region = 62, main = "Tokomaru")
-plot_region(cau$mod, cau$data, region = 2, main = "Levin")
-plot_region(cau$mod, cau$data, region = 15, main = "Pahiatua")
+plot_region(cau$mod, cau$data, region = 45, main = "Highbury")
+plot_region(cau$mod, cau$data, region = 10, main = "Ashhurst")
+plot_region(cau$mod, cau$data, region = 61, main = "Waiopehu")
+plot_region(cau$mod, cau$data, region = 69, main = "Levin")
+plot_region(cau$mod, cau$data, region = 71, main = "Pahiatua")
 ```
 
 Of note is the large, known, water associated outbreak in Pahiatua in August 2008. These cases have been shown in other work to be highly ruminant associated through genotyping. Interestingly, this was preceeded by a potential outbreak in Levin the week before, though this covered only 3 cases which may just be a chance occurrence (the outbreak probability is not particularly high). The August 2008 Pahiatua outbreak is the only large outbreak detected, with all others involving 4 cases or fewer. For the majority of these smaller outbreaks we don't have sufficient genotype information to assess whether they may be related genetically, with the exception of the Ashhurst outbreak in 2007, where 3 of the 4 cases share the same genotype, ST-38.
@@ -280,13 +300,15 @@ plot_temporal(water$mod, water$data)
 There are more outbreaks that reach the 20% threshold in the water zones compared to the census area units, which is likely the result of fewer, and thus larger, regions. The spatial trend is displayed below.
 
 ```{r water_spatial, fig.width = 6, fig.height = 6, dev='pdf'}
-plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu')
+plot_spatial(water$mod, water$data, threshold=0.2,
+             shapefile='../shape_files/midcentral_phu')
 ```
 
 Interestingly the same areas around Pahiatua, Ashhurst and Palmerston North are showing up, along with a potential outbreak for which there is less evidence around Summerhill and Linton south of Palmerston North. A closer look of the Palmerston North surroundings is below.
 
 ```{r water_spatial_horowhenua, fig.width = 6, fig.height = 6, dev='pdf'}
-plot_spatial(water$mod, water$data, '../shape_files/midcentral_phu',
+plot_spatial(water$mod, water$data, threshold=0.2,
+             shapefile='../shape_files/midcentral_phu',
              bbox = matrix(c(2722946,6081900,2739889,6099322), 2))
 ```
 
@@ -296,7 +318,7 @@ The outbreaks are tabulated below.
 table_outbreaks(water$mod, water$data) %>% kable
 ```
 
-We see there are multiple outbreaks in regions 5 (Pahiatua) and 6 (Palmerston North), two smaller potential outbreaks of just two cases each in region 7 (Summerhill, Linton) and one outbreak in region 12 (Ashhurst), consisting of the same cases as found using the census area units.
+We see there are multiple outbreaks in regions 5 (Pahiatua) and 6 (Palmerston North), three smaller potential outbreaks of just two cases each in region 7 (Summerhill, Linton) and two outbreaks in region 12 (Ashhurst), consisting of the same cases as found using the census area units in 2007 and an additional outbreak in 2013.
 
 The genotype information for these cases (where available) suggests that the March 2006 Palmerston North outbreak is likely poultry associated (ST-48, ST-50 and ST-474) while the July 2006 outbreak may be a mix, or may involve unrelated cases (ST-48, ST-474, ST-61). The large 2008 Pahiatua outbreak consists of the same set of cases as earlier which are ruminant associated, while for the remaining outbreaks there is insufficient genotype information to make any further inference. The outbreak plots for these regions are below
 
@@ -324,12 +346,16 @@ The outbreak table shows
 table_outbreaks(ta$mod, ta$data) %>% kable
 ```
 
-TODO: UPDATE ME
+All outbreaks are in regions two and three which correspond to Palmerston North (orange) and Tararua (blue) districts respectively. Interestingly the Tararua region includes only the one outbreak (the major Pahiatua outbreak of 2008) with all other potential outbreaks in Pahiatua no longer showing up. This reflects the low number of cases in these 'outbreaks' with only 3, which when spread over the larger region of the Tararua district is no longer remarkable.
 
-All outbreaks are in the third region which corresponds to the blue region above, and includes Pahiatua and Ashhurst in addition to the Hokowhitu and Brightwater regions of Palmerston North. Only the Pahiatua outbreak of 2008 has strong evidence, with probability close to one. Interestingly the size of this outbreak is larger than indicated in the previous models, with an additional two cases included, both of which are likely to be separate, sporadic cases (one in Linton, ST-474, and one in Eketahuna, ST-1581). The outbreak plot for this region is below.
+Interestingly there are more outbreaks identified in Palmerston North such as one in February 2010 and another in June 2011, which is the previously identified raw milk outbreak. Three of the 9 cases from February 2010 were genotyped, and two of these share a common type (ST-53) with the other being ST-3711. The raw milk outbreak in June 2011 included another 3 cases not specified above that were outside of Palmerston North in addition to 5 of the 6 cases identified here. These cases consumed raw milk purchased from the same farm, and seven had a common sequence type (ST-520).
+
+The Pahiatua outbreak of 2008 was larger than indicated in the previous models, with an additional cases included which is likely to be a separate, sporadic case in Eketahuna with genotype ST-1581. The outbreak plot for Palmerston North and the Tararua district is below.
 
 ```{r ta_outbreak_regions, message=FALSE}
-plot_region(ta$mod, ta$data, region = 3, main = "Region 3")
+par(mfrow=c(2,1), mar=c(3,3,2,2))
+plot_region(ta$mod, ta$data, region = 2, main = "Palmerston North city")
+plot_region(ta$mod, ta$data, region = 3, main = "Tararua District")
 ```
 
 # Summary
@@ -338,8 +364,8 @@ The epiclustR model has been greatly improved in terms of runtime and ease of us
 
 Moving the model fitting framework into an R package means it can be more easily deployed onto any system running R, and the output functions allow rapid production of tabular and graphical summaries of the model fit.
 
-A study of the last 10 years of campylobacteriosis in the Manawatu primarily highlighed the previously known water associated outbreak in Pahiatua in 2008, where 10 cases resulted, all of which were associated with ruminant sources. A further potential outbreak in Ashhurst in 2007 of 4 cases was detected, and genotyping information from these cases suggests they may be linked. Of the other potential outbreaks, most are small and have less evidence (a lower probability).
+A study of the last 10 years of campylobacteriosis in the Manawatu primarily highlighed the previously known water associated outbreak in Pahiatua in 2008, where 10 cases resulted, all of which were associated with ruminant sources. A further potential outbreak in Ashhurst in 2007 of 4 cases was detected, and genotyping information from these cases suggests they may be linked. The raw milk outbreak of 2011 in Palmerston North was also identified, though had lower probability. Of the other potential outbreaks, most are small or have less evidence.
 
-It is important that the outbreak regions are set at the appropriate scale for detection of outbreaks. Strong, localised outbreaks are likely to be detected regardless of region size, while less strong, more disperse outbreaks will require larger outbreak areas. Choosing an appropriate scale is difficult. For example, none of the regions used in this study detected the raw milk associated outbreak in May 2011 which was relatively disperse across and around Palmerston North. This was previously detected by running epiclustR across all of New Zealand, where the fine spatial units were census area units, and outbreak areas were territorial authorities. If outbreak regions were better chosen to reflect sources of risk (e.g. by using areas likely to be served by the same raw milk suppliers) then they're likely to better detect outbreaks due to that source.
+It is important that the outbreak regions are set at the appropriate scale for detection of outbreaks. Strong, localised outbreaks are likely to be detected regardless of region size, while less strong, more disperse outbreaks will require larger outbreak areas. Choosing an appropriate scale is difficult. For example, only one of the regions used in this study detected the raw milk associated outbreak in May 2011 which was relatively disperse across and around Palmerston North. This was previously detected by running epiclustR across all of New Zealand, where the fine spatial units were census area units, and outbreak areas were territorial authorities. If outbreak regions were better chosen to reflect sources of risk (e.g. by using areas likely to be served by the same raw milk suppliers) then they're likely to better detect outbreaks due to that source.
 
 Future development for epiclustR might focus around how to model likely outbreaks by utilising less stringent definitions of regions in space and time. For example, a multi-level hierarchy of regions might be used to try and capture both highly localised as well as more disperse outbreaks. Alternatively, a non-parameteric model of the excess cases over and above the spatial and temporal trends might be used to scan for localised clustering accounting for the distance in space and time between pairs of cases.
