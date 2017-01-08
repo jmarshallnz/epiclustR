@@ -58,8 +58,8 @@ void update_u(const Data &data,
         double sumU = 0;
         for (int j = 1; j < data.nb(u,0) + 1; j++)
           sumU += s.U(data.nb(u,j)-1, p);
-
-        proposal = R::rnorm(sumU/data.nb(u,0), 1/::sqrt(s.kU * data.nb(u,0)));
+        int n = std::max((int)data.nb(u,0), 1);
+        proposal = R::rnorm(sumU/n, 1/::sqrt(s.kU * n));
         ap = u_likelihood(data, s, proposal, u, p);
       } else { // M-H random walk proposal
         proposal = R::rnorm(s.U(u,p), sigmaU);
