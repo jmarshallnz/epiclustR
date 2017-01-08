@@ -136,10 +136,19 @@ check_data <- function(data) {
   # initialize the region and spatial lookup tables
   if (is.null(data$mbrg))
     data$mbrg <- rep(1, ncol(data$cases))
+  data$mbrg <- factor(data$mbrg)
   data$rgmb <- init_lut(data$mbrg)
   if (is.null(data$t2p))
     data$t2p <- rep(1, nrow(data$cases))
+  data$t2p <- factor(data$t2p)
   data$p2t <- init_lut(data$t2p)
+
+  # assemble spatial list for post-processing
+  data$spat_list <- data.frame(Spatial = colnames(data$cases), Region = data$mbrg)
+
+  # convert lookups to numeric for C++ land
+  data$mbrg <- as.numeric(data$mbrg)
+  data$t2p <- as.numeric(data$t2p)
 
   # expand population to population by week if it is not already
   if (!is.matrix(data$popn)) {

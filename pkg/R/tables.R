@@ -10,10 +10,12 @@ table_outbreaks <- function(mod, data, period = NULL, threshold = 0.2) {
   X <- ssapply(mod, extract_variable, 'X')
   mX = apply(X, 1:2, mean)
   mX = data.frame(mX, check.names = FALSE)
+  names(mX) <- names(data$rgmb)
   mX$ReportWeek = as.Date(row.names(data$cases))
-  regions = tidyr::gather_(mX, key_col='Region', value_col='P', gather_cols=setdiff(names(mX), 'ReportWeek'), convert=TRUE)
+  regions = tidyr::gather_(mX, key_col='Region', value_col='P', gather_cols=setdiff(names(mX), 'ReportWeek'), convert=FALSE)
 
   # match these up with cases
+  data$case_list[,'Spatial'] <- as.character(data$case_list[,'Spatial'])
   case_outbreaks <- data$case_list %>% dplyr::left_join(data$spat_list, by="Spatial") %>%
     dplyr::left_join(regions, by=c("Region", "ReportWeek"))
   case_outbreaks <- case_outbreaks[,c('CaseID', 'ReportWeek', 'Region', 'P')]

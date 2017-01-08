@@ -41,12 +41,13 @@ load_spatial_neighbours <- function(file) {
 
 #' Initialize a reverse lookup table from a lookup vector
 #' 
-#' @param luv A lookup vector mapping items to a grouping variable with levels 1 to n
+#' @param luv A factor mapping items to a grouping variable
 #' @return a list for reverse lookups from levels to vector entries in `luv`
 init_lut <- function(luv) {
   lut <- list()
-  n <- max(luv)
-  for (j in 1:n) {
+  luv <- factor(luv)
+  n <- levels(luv)
+  for (j in n) {
     lut[[j]] <- which(luv==j)
   }
   lut

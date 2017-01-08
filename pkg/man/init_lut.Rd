@@ -7,7 +7,7 @@
 init_lut(luv)
 }
 \arguments{
-\item{luv}{A lookup vector mapping items to a grouping variable with levels 1 to n}
+\item{luv}{A factor mapping items to a grouping variable}
 }
 \value{
 a list for reverse lookups from levels to vector entries in `luv`

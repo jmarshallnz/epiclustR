@@ -79,6 +79,7 @@ plot_region <- function(mod, data, region = NULL, ...) {
   # pull the outbreak binary variables out of our model posterior
   X = ssapply(mod, extract_variable, 'X')
   mX = apply(X, 1:2, mean)
+  colnames(mX) <- names(data$rgmb)
   if (!is.null(region))
     mX = mX[,region,drop=FALSE]
   mX = apply(mX, 1, max)

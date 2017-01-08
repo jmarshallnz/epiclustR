@@ -67,7 +67,7 @@ plot_spatial <- function(mod, data, shapefile, spatField, period=NULL, threshold
   }
 
   # filter down the threshold
-  outbreaks <- data.frame(Region = 1:ncol(mX), P = apply(mX, 2, max))
+  outbreaks <- data.frame(Region = names(data$rgmb), P = apply(mX, 2, max))
   if (is.null(threshold)) {
     threshold = 2 # nothing past this
   }
@@ -79,8 +79,11 @@ plot_spatial <- function(mod, data, shapefile, spatField, period=NULL, threshold
   col_match <- 'Spatial'
   names(col_match) <- spatField
 
+  # ensure the map spatial field is character
+  map@data[,spatField] <- as.character(map@data[,spatField])
+
   map_dat <- map@data %>%
-    dplyr::left_join(spat_risk, by=col_match) %>%
+    dplyr::left_join(spat_risk, by=col_match, copy=TRUE) %>%
     dplyr::left_join(outbreaks, by='Region')
 
   # figure out some break-points for colours
