@@ -4,8 +4,8 @@
 \alias{plot_spatial}
 \title{Plot spatial trends from an epiclustR model}
 \usage{
-plot_spatial(mod, data, shapefile, period = NULL, threshold = NULL,
-  bbox = NULL, breaks = NULL, legend = TRUE)
+plot_spatial(mod, data, shapefile, spatField, period = NULL,
+  threshold = NULL, bbox = NULL, breaks = NULL, legend = TRUE)
 }
 \arguments{
 \item{mod}{the model to plot}
@@ -13,6 +13,8 @@ plot_spatial(mod, data, shapefile, period = NULL, threshold = NULL,
 \item{data}{the data used to fit the model}
 
 \item{shapefile}{the shape file to use for the map}
+
+\item{spatField}{the column in the shape file to use for identifying spatial units (character string).}
 
 \item{period}{which time periods(s) to plot. Default to NULL (all times)}
 

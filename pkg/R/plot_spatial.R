@@ -23,6 +23,7 @@ extract_spatial <- function(state, data) {
 #' @param mod the model to plot
 #' @param data the data used to fit the model
 #' @param shapefile the shape file to use for the map
+#' @param spatField the column in the shape file to use for identifying spatial units (character string).
 #' @param period which time periods(s) to plot. Default to NULL (all times)
 #' @param threshold threshold at which to show outbreaks. Any outbreak with probability over this threshold will
 #' be highlighted. Defaults to NULL (not shown).
@@ -31,8 +32,17 @@ extract_spatial <- function(state, data) {
 #' @param breaks The breaks to use for the spatial map. Must be of length 10 and cover the data
 #' @param legend Whether to plot a legend or not. Defaults to TRUE.
 #' @export
-plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=NULL, bbox=NULL, breaks=NULL, legend=TRUE) {
+plot_spatial <- function(mod, data, shapefile, spatField, period=NULL, threshold=NULL, bbox=NULL, breaks=NULL, legend=TRUE) {
+
+  if (missing(mod) | missing(data) | missing(shapefile)) {
+    stop("mod, data, and shapefile must be given\n")
+  }
+
   map <- maptools::readShapeSpatial(shapefile)
+
+  if (missing(spatField)) {
+    stop(paste0("spatField must be given, options are ", paste(names(map@data), collapse=', '), "\n"))
+  }
 
   spat_risk <- apply(ssapply(mod, extract_spatial, data=data), 1:2, mean)
 
@@ -66,8 +76,11 @@ plot_spatial <- function(mod, data, shapefile, period=NULL, threshold=NULL, bbox
   # form the data.frame
   spat_risk <- cbind(data$spat_list, Risk=spat_risk)
 
+  col_match <- 'Spatial'
+  names(col_match) <- spatField
+
   map_dat <- map@data %>%
-    dplyr::left_join(spat_risk, by=c('MB06' = 'Spatial')) %>%
+    dplyr::left_join(spat_risk, by=col_match) %>%
     dplyr::left_join(outbreaks, by='Region')
 
   # figure out some break-points for colours
