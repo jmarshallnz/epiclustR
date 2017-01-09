@@ -249,10 +249,10 @@ The spatial trends pre and post 2008 are displayed below.
 par(mfrow=c(1,2), mai=rep(0,4))
 plot_spatial(cau$mod, cau$data, period=1, legend=FALSE, threshold=0.2,
              breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
-             shapefile='../shape_files/midcentral_phu')
+             shapefile='../shape_files/midcentral_phu', spatField='MB06')
 plot_spatial(cau$mod, cau$data, period=2, threshold=0.2,
              breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
-             shapefile='../shape_files/midcentral_phu')
+             shapefile='../shape_files/midcentral_phu', spatField='MB06')
 ```
 
 As can be seen, there tends to be more risk in rural areas compared to urban areas, though there is lower risk on the east coast, though there are little data there. There is a clear decrease in risk in Palmerston North after 2008, corresponding to fewer urban cases. There are outbreaks detected both within Palmerston North as well as in Pahiatua and Ashhurst, along with some with less evidence surrounding Tokomaru and Levin.
@@ -262,11 +262,11 @@ A close-up look at Palmerston North is below which clearly shows the decrease in
 par(mfrow=c(1,2), mai=rep(0,4))
 plot_spatial(cau$mod, cau$data, period=1, legend=FALSE, threshold=0.2,
              breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
-             shapefile='../shape_files/midcentral_phu',
+             shapefile='../shape_files/midcentral_phu', spatField='MB06',
              bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
 plot_spatial(cau$mod, cau$data, period=2, threshold=0.2,
              breaks=c(-1.1,-0.4,-0.25,-0.15,-0.05,0.05,0.15,0.25,0.4,1.1),
-             shapefile='../shape_files/midcentral_phu',
+             shapefile='../shape_files/midcentral_phu', spatField='MB06',
              bbox = matrix(c(2727946,6086900,2734889,6094322), 2))
 ```
 
@@ -301,14 +301,14 @@ There are more outbreaks that reach the 20% threshold in the water zones compare
 
 ```{r water_spatial, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(water$mod, water$data, threshold=0.2,
-             shapefile='../shape_files/midcentral_phu')
+             shapefile='../shape_files/midcentral_phu', spatField='MB06')
 ```
 
 Interestingly the same areas around Pahiatua, Ashhurst and Palmerston North are showing up, along with a potential outbreak for which there is less evidence around Summerhill and Linton south of Palmerston North. A closer look of the Palmerston North surroundings is below.
 
 ```{r water_spatial_horowhenua, fig.width = 6, fig.height = 6, dev='pdf'}
 plot_spatial(water$mod, water$data, threshold=0.2,
-             shapefile='../shape_files/midcentral_phu',
+             shapefile='../shape_files/midcentral_phu', spatField='MB06',
              bbox = matrix(c(2722946,6081900,2739889,6099322), 2))
 ```
 
@@ -335,7 +335,7 @@ plot_region(water$mod, water$data, region = 12, main = "Ashhurst")
 To investigate whether fewer outbreak regions would allow the detection of additional, potentially more widespread outbreaks, the fine spatial units (meshblocks) were clustered at the territorial authority level.
 
 ```{r ta_map, fig.height=5, fig.width=5, dev='pdf',echo=FALSE}
-map_data = map@data %>% left_join(ta$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
+map_data = map@data %>% mutate(MB06 = as.character(MB06)) %>% left_join(ta$data$spat_list, by=c('MB06' = 'Spatial'), copy = TRUE)
 library(RColorBrewer)
 pal <- brewer.pal(4, "Set2")
 plot(map, col=pal[map_data$Region], border=NA)
