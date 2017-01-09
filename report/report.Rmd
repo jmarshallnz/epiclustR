@@ -276,15 +276,15 @@ The table of outbreaks is shown below, with a threshold of 0.2 used to show any 
 table_outbreaks(cau$mod, cau$data) %>% kable
 ```
 
-We see that there are potential outbreaks in regions 45 (Highbury), 10 (Ashhurst) and 61 (Waiopehu), and multiple potential outbreaks in regions 69 (Levin) and 71 (Pahiatua). The outbreak series for these regions are below.
+We see that there are potential outbreaks in Highbury, Ashhurst and Waiopehu, and multiple potential outbreaks in Levin and Pahiatua. The outbreak series for these regions are below.
 
 ```{r cau_outbreaks, fig.width = 6, fig.height = 8}
 par(mfrow=c(5,1), mar = c(3,3,2,2))
-plot_region(cau$mod, cau$data, region = 45, main = "Highbury")
-plot_region(cau$mod, cau$data, region = 10, main = "Ashhurst")
-plot_region(cau$mod, cau$data, region = 61, main = "Waiopehu")
-plot_region(cau$mod, cau$data, region = 69, main = "Levin")
-plot_region(cau$mod, cau$data, region = 71, main = "Pahiatua")
+plot_region(cau$mod, cau$data, region = "Highbury")
+plot_region(cau$mod, cau$data, region = "Ashhurst")
+plot_region(cau$mod, cau$data, region = "Waiopehu")
+plot_region(cau$mod, cau$data, region = "Levin East")
+plot_region(cau$mod, cau$data, region = "Pahiatua")
 ```
 
 Of note is the large, known, water associated outbreak in Pahiatua in August 2008. These cases have been shown in other work to be highly ruminant associated through genotyping. Interestingly, this was preceeded by a potential outbreak in Levin the week before, though this covered only 3 cases which may just be a chance occurrence (the outbreak probability is not particularly high). The August 2008 Pahiatua outbreak is the only large outbreak detected, with all others involving 4 cases or fewer. For the majority of these smaller outbreaks we don't have sufficient genotype information to assess whether they may be related genetically, with the exception of the Ashhurst outbreak in 2007, where 3 of the 4 cases share the same genotype, ST-38.
