@@ -73,9 +73,10 @@ plot_traces <- function(mod) {
 #' @param mod the model to plot
 #' @param data the data for the model (for plotting cases)
 #' @param region which region to plot. Defaults to NULL (all regions).
+#' @param main the main title of the plot. Defaults to the region.
 #' @param ... other parameters passed to the plotting functions.
 #' @export
-plot_region <- function(mod, data, region = NULL, ...) {
+plot_region <- function(mod, data, region = NULL, main = region, ...) {
   # pull the outbreak binary variables out of our model posterior
   X = ssapply(mod, extract_variable, 'X')
   mX = apply(X, 1:2, mean)
@@ -95,7 +96,7 @@ plot_region <- function(mod, data, region = NULL, ...) {
   cases = apply(data$cases[,u,drop=FALSE], 1, sum)
 
   # and do the plot
-  plot(weeks, mX, type="h", ylim=c(-1,1), xlim=range(weeks), xaxs="i", xlab="", ylab="", yaxt="n", ...)
+  plot(weeks, mX, type="h", ylim=c(-1,1), xlim=range(weeks), xaxs="i", xlab="", ylab="", yaxt="n", main=main, ...)
   axis(2, labels=c(0,0.5,1), at=c(0,0.5,1))
   case_axis <- pretty(cases)
   axis(4, labels=case_axis, at=-1*case_axis/max(case_axis))
