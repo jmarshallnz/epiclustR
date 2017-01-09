@@ -10,7 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE, dev = 'tikz', fig.align='center', fig.width=7)
+knitr::opts_chunk$set(echo = TRUE, dev = 'tikz', fig.align='center', fig.width=7, message=FALSE, warning=FALSE)
 library(epiclustR)
 library(dplyr)
 library(RColorBrewer)
