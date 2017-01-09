@@ -346,7 +346,7 @@ The outbreak table shows
 table_outbreaks(ta$mod, ta$data) %>% kable
 ```
 
-All outbreaks are in regions two and three which correspond to Palmerston North (orange) and Tararua (blue) districts respectively. Interestingly the Tararua region includes only the one outbreak (the major Pahiatua outbreak of 2008) with all other potential outbreaks in Pahiatua no longer showing up. This reflects the low number of cases in these 'outbreaks' with only 3, which when spread over the larger region of the Tararua district is no longer remarkable.
+All outbreaks are in regions of Palmerston North (blue) and Tararua (orange) districts respectively. Interestingly the Tararua region includes only the one outbreak (the major Pahiatua outbreak of 2008) with all other potential outbreaks in Pahiatua no longer showing up. This reflects the low number of cases in these 'outbreaks' with only 3, which when spread over the larger region of the Tararua district is no longer remarkable.
 
 Interestingly there are more outbreaks identified in Palmerston North such as one in February 2010 and another in June 2011, which is the previously identified raw milk outbreak. Three of the 9 cases from February 2010 were genotyped, and two of these share a common type (ST-53) with the other being ST-3711. The raw milk outbreak in June 2011 included another 3 cases not specified above that were outside of Palmerston North in addition to 5 of the 6 cases identified here. These cases consumed raw milk purchased from the same farm, and seven had a common sequence type (ST-520).
 
@@ -354,8 +354,8 @@ The Pahiatua outbreak of 2008 was larger than indicated in the previous models, 
 
 ```{r ta_outbreak_regions, message=FALSE}
 par(mfrow=c(2,1), mar=c(3,3,2,2))
-plot_region(ta$mod, ta$data, region = 2, main = "Palmerston North city")
-plot_region(ta$mod, ta$data, region = 3, main = "Tararua District")
+plot_region(ta$mod, ta$data, region = "Palmerston North City")
+plot_region(ta$mod, ta$data, region = "Tararua District")
 ```
 
 # Summary
