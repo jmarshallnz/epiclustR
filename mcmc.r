@@ -11,17 +11,17 @@ spat <- read.table("Meshblocks.txt", header=TRUE)
 
 library(meshblocknz)
 spat <- spat %>% left_join(mb2006, by=c("Meshblock06" = "MB2006")) %>%
-  mutate(TA2006 = ifelse(TA2006 == '043', '042', TA2006))
+  mutate(TA2006_name = ifelse(TA2006_name == 'Kapiti Coast District', 'Horowhenua District', TA2006_name))
 
 nb   <- load_spatial_neighbours("Weights.GAL")
 popn <- spat$Population
-mbrg <- spat$TA2006
+mbrg <- spat$TA2006_name
 
 case <- read.csv("CaseData/cases.csv", stringsAsFactors = FALSE)
 
 case <- case %>% filter(Meshblock06 %in% spat$Meshblock06) %>%
   mutate(ReportWeek = as.Date(ReportWeek)) %>%
-  filter(Year >= 2006 & Year <= 2016)
+  filter(Year >= 2006 & Year <= 2015)
 
 # now compute the number of cases per meshblock per time
 weeks <- seq(min(case$ReportWeek), max(case$ReportWeek), by = 7)
