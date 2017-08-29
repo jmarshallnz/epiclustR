@@ -29,23 +29,34 @@ dim(U) <- c(dim(U)[1:2], prod(dim(U)[3:4]))
 
 library(maptools)
 library(sf)
-phu <- sf::st_read('Poster/maps/midcentral_phu.shp')
+mc <- sf::st_read('Poster/maps/midcentral_phu.shp')
 hb <- sf::st_read('Poster/maps/hawkes_bay.shp')
 nz <- sf::st_read('Poster/maps/NZ_region-NZTM2000.shp', layer='REGION')
 
-# TODO: The midcentral_phu is on the wrong scale. Need to convert to NZTM2000
-# from whatever it is...
-src.proj = '+proj=tmerc +lat_0=0 +lon_0=173 +k=0.9996 +x_0=1600000 +y_0=10000000 +ellps=WGS84'
-dst.proj = '+proj=longlat  +datum=WGS84 +no_defs'
-latlong = project(triamp[,1:2], src.proj, inverse=TRUE, ellps.default = NA)
+# convert phu to the correct projection
+nzgd1949.proj = '+proj=nzmg +lat_0=-41 +lon_0=173 +x_0=2510000 +y_0=6023150 +ellps=intl +datum=nzgd49 +units=m +no_defs'
+nzgd2000.proj = '+proj=tmerc +lat_0=0 +lon_0=173 +k=0.9996 +x_0=1600000 +y_0=10000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
 
+st_crs(mc) <- nzgd1949.proj
+mc <- st_transform(mc, nzgd2000.proj)
 
-plot(nz)
-plot(phu, add=TRUE)
-plot(hb, add=TRUE)
+# union up the major boundaries
+mc_u <- st_union(mc)
+hb_u  <- st_union(hb)
 
-# TODO: need to transform phu into nz coords
+# right, now compute the risk surfaces to plot
+load('Poster/data/mc/TA2006.Rdata'); dat_mc <- new
+load('Poster/data/hb/HNArea.Rdata'); dat_hb <- new
 
+# combine chains into a single list of iterations
+U_mc <- epiclustR:::ssapply(dat_mc$mod, epiclustR:::extract_spatial, data=dat_mc$data)
+dim(U_mc) <- c(dim(U_mc)[1:2], prod(dim(U_mc)[3:4]))
+
+U_hb <- epiclustR:::ssapply(dat_hb$mod, epiclustR:::extract_spatial, data=dat_hb$data)
+dim(U_hb) <- c(dim(U_hb)[1:2], prod(dim(U_hb)[3:4]))
+
+# break into appropriate levels
+U <- c(U_mc, U_hb)
 num_cols <- 101
 up_bks = quantile(U[U > 0], seq(1,num_cols,by=2)/num_cols)
 lo_bks = quantile(U[U < 0], seq(num_cols-1,0,by=-2)/num_cols)
@@ -57,48 +68,234 @@ alpha <- function(col, x = 0.5) {
 }
 brewerBrBG9 <- c("#01665E","#35978F","#80CDC1","#C7EAE5","#F5F5F5","#F6E8C3","#DFC27D","#BF812D","#8C510A")
 #cols <- alpha(brewerBrBG9, 0.7)
-cols <- colorRampPalette(brewerBrBG9)(num_cols)
+cols <- colorRampPalette(brewerBrBG9, space='Lab')(num_cols)
 
-if (is.null(bbox) || !is.matrix(bbox))
-  bbox = sp::bbox(phu)
+num_alpha <- 10
+breaks_alpha <- seq(0,1,length.out=num_alpha+1)
 
-plot_map <- function(u, bbox = sp::bbox(phu)) {
-  spat_risk <- cbind(TA$data$spat_list, Risk=u)
-  
-  map_dat <- phu@data %>%
-    dplyr::left_join(spat_risk, by=c('MB06' = 'Spatial'))
-  
-  vals <- cut(map_dat$Risk, breaks = breaks)
-  map_col <- alpha(cols[vals], 1)
-  
-  sp::plot(phu, col=map_col, lwd=0.02, border='grey80', xlim=bbox[1,], ylim=bbox[2,])
+uncertain_func <- function(x) {
+  y <- 1-(max(sum(x > 0), sum(x < 0)) / length(x)*2 - 1)
+  # those more uncertain, make more so (y == 1)
+  sqrt(y)
 }
 
-set.seed(5)
-iters <- sample(seq_along(U[1,1,]), 40)
-V <- apply(U[,,iters], 1:2, function(x) { spline(seq_len(length(x)+1), c(x, x[1]), method='periodic', xout=seq(1, length(x)+1, by=1/20)[-1])$y })
-for (i in seq_len(dim(V)[1])) {
-  png(sprintf("spatial_fit%04d.png", i), width=960, height=480)
-  par(mfrow=c(1,2), mai=c(0,0,0,0), bg="#FFFFFF")
-  cat("plotting", i, "of", dim(V)[1], "\n")
-  apply(V[i,,], 2, function(y) { plot_map(y) })
-  dev.off()
-}
-#system("convert -delay 4 -loop 0 -dispose background spatial_fit*.png spatial_fit2.gif")
-#system("convert spatial_fit2.gif -transparent white spatial_fit.gif")
-system("avconv -y -r 24 -i spatial_fit%04d.png spatial_fit.mp4")
+unc_mc <- apply(U_mc, 1:2, uncertain_func)
+unc_mc <- apply(unc_mc, 2, function(x) { as.numeric(cut(x, breaks=breaks_alpha, include.lowest = TRUE)) })
 
-for (i in seq_len(dim(V)[1])) {
-  png(sprintf("spatial_palmy_fit%04d.png", i), width=960, height=480)
-  par(mfrow=c(1,2), mai=c(0,0,0,0), bg="#FFFFFF")
-  cat("plotting", i, "of", dim(V)[1], "\n")
-  apply(V[i,,], 2, function(y) { plot_map(y, bbox=matrix(c(2727946,6086900,2734889,6094322), 2)) })
-  dev.off()
-}
-#system("convert -delay 4 -loop 0 -dispose background spatial_palmy_fit*.png spatial_palmy_fit2.gif")
-#system("convert spatial_palmy_fit2.gif -transparent white spatial_palmy_fit.gif")
+unc_hb <- apply(U_hb, 1:2, uncertain_func)
+unc_hb <- apply(unc_hb, 2, function(x) { as.numeric(cut(x, breaks=breaks_alpha, include.lowest = TRUE)) })
 
-system("avconv -y -r 24 -i spatial_palmy_fit%04d.png spatial_palmy_fit.mp4")
+cols_unc <- lapply(cols, function(x) { colorRampPalette(c(x, 'grey50'), space='Lab')(num_alpha+1) })
+alpha_cols <- simplify2array(cols_unc)
+
+# mean risk
+risk_mc <- apply(U_mc, 1:2, mean)
+risk_hb <- apply(U_hb, 1:2, mean)
+
+spat_mc <- cbind(dat_mc$data$spat_list, Risk=risk_mc, Uncertainty=unc_mc)
+spat_mc$Spatial = as.numeric(as.character(spat_mc$Spatial))
+
+mc_risk <- mc %>%
+  dplyr::left_join(spat_mc, by=c('MB06' = 'Spatial'))
+
+spat_hb <- cbind(dat_hb$data$spat_list, Risk=risk_hb, Uncertainty=unc_hb)
+spat_hb$Spatial = as.numeric(as.character(spat_hb$Spatial))
+
+hb_risk <- hb %>%
+  dplyr::left_join(spat_hb, by=c('MB2013' = 'Spatial'))
+
+plot_map <- function(map, risk_var, uncertainty_var, ...) {
+  col_val <- cut(map[[risk_var]], breaks = breaks)
+  map_col <- alpha(alpha_cols[cbind(map[[uncertainty_var]], col_val)], 1)
+  
+  plot(map[1], col=map_col, ...)
+}
+
+
+# Doing the plot, ya'll
+xlim <- c(1688987, 2075499)
+ylim <- c(5328733, 5814989) + 50000
+pdf("Poster/figures/main.pdf", width=33.1, height=46.8)
+par(mar=c(0,0,0,0))
+plot(nz["REGION"], col='grey70', border=NA, xlim=xlim, ylim=ylim, main='')
+plot_map(mc_risk, 'Risk.2', 'Uncertainty.2', lwd=0.02, border=NA, add=TRUE)
+plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border=NA, add=TRUE)
+
+plot(mc_u, col=NA, border='black', lwd=1, add=TRUE)
+plot(hb_u, col=NA, border='black', lwd=1, add=TRUE)
+xlim <- 1920000 + c(0, 20000)
+ylim <- 5600000 + c(0, 25000)
+rect(xlim[1], ylim[1], xlim[2], ylim[2], col=NA, border='black', lwd=2)
+
+xlim <- 1817500 + c(0,9000)
+ylim <- 5525000 + c(0,9000)
+
+rect(xlim[1], ylim[1], xlim[2], ylim[2], col=NA, border='black', lwd=2)
+
+dev.off()
+
+# now do some zoomed in ones for the rest of the poster
+
+# First MidCentral
+xlim <- 1817500 + c(0,9000)
+ylim <- 5525000 + c(0,9000)
+pdf("Poster/figures/mc2006.pdf", width=7, height=7)
+par(mar=c(0,0,0,0))
+plot_map(mc_risk, 'Risk.1', 'Uncertainty.1', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+dev.off()
+pdf("Poster/figures/mc2016.pdf", width=7, height=7)
+par(mar=c(0,0,0,0))
+plot_map(mc_risk, 'Risk.2', 'Uncertainty.2', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+dev.off()
+
+# Now Hawkes Bay
+xlim <- c(1920791, 1942290)
+ylim <- c(5597710, 5625823)
+plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+
+pdf("Poster/figures/hn_hastings.pdf", width=8, height=10)
+par(mar=c(0,0,0,0))
+xlim <- 1920000 + c(0, 20000)
+ylim <- 5600000 + c(0, 25000)
+plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+dev.off()
+
+#pdf("Poster/figures/hn_napier.pdf", width=6, height=6)
+#ar(mar=c(0,0,0,0))
+#xlim <- c(1928962, 1938802) + c(0,-1000)
+#ylim <- c(5616509, )
+#plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+#dev.off()
+
+# Now the temporal outbreak graphs
+plot_temporal <- function(weeks, scases, ecases, week, ax_col='grey30') {
+  par(mgp=c(2,.7,0), tck=-.015, bg="#FFFFFF")
+  plot(weeks, ecases, ylim=c(0,12), type='l', col="red", xaxs='i', yaxs='i', xlab='', lwd=1,
+       ylab='', axes=FALSE, col.lab=ax_col)
+  #  axis(2, col=ax_col, col.axis=ax_col, las=1, cex.axis=0.8)
+  axis(1, col=ax_col, col.axis=ax_col, at=as.Date(paste0(2006:2017,"-01-01")), labels=rep("",12))
+  mtext(2006:2016, side=1, col=ax_col, at=as.Date(paste0(2006:2016,"-07-01")), line=0.5)
+  lines(weeks, scases, col="black", lwd=2)
+  rect(weeks[week]-14, 0, weeks[week]+14, 12, col=alpha("steelblue", 0.7), border=NA)
+}
+
+scases_mc = apply(epiclustR:::ssapply(dat_mc$mod, epiclustR:::extract_variable, 'scases'), 1, median)
+ecases_mc = apply(epiclustR:::ssapply(dat_mc$mod, epiclustR:::extract_variable, 'ecases'), 1, median)
+weeks_mc = as.Date(rownames(dat_mc$data$cases))
+
+# Find the Raw Milk outbreak and Pahiatua outbreaks
+wch_rawmilk <- which(ecases_mc - scases_mc > 0.3)[5]
+wch_pahiatua <- which(ecases_mc - scases_mc > 0.4)[1]
+
+ecases_mc[wch_rawmilk] <- scases_mc[wch_rawmilk]+1 # Dodgy extra highlight???
+
+# do a plot with these
+pdf("Poster/figures/mc_temporal.pdf", width=22, height=5)
+plot_temporal(weeks_mc, scases_mc, ecases_mc, week=NA)
+axis(2)
+dev.off()
+
+# Now Hawke's Bay
+scases_hb = apply(epiclustR:::ssapply(dat_hb$mod, epiclustR:::extract_variable, 'scases'), 1, median)
+ecases_hb = apply(epiclustR:::ssapply(dat_hb$mod, epiclustR:::extract_variable, 'ecases'), 1, median)
+weeks_hb = as.Date(rownames(dat_hb$data$cases))
+
+extract_temporal <- function(mod, var) {
+  v = epiclustR:::ssapply(mod, epiclustR:::extract_variable, var)
+  dim(v) <- c(dim(v)[1], prod(dim(v)[2:3]))
+  v
+}
+scases_hb = extract_temporal(dat_hb$mod, 'scases')
+ecases_hb = apply(extract_temporal(dat_hb$mod, 'ecases'),1,median)
+# extract out the median trend
+df <- data.frame(Week = weeks_hb, t(apply(scases_hb, 1, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))), Outbreaks=ecases_hb)
+names(df)[2:6] <- c("Min", "LQ", "Median", "UQ", "Max")
+
+# rearrange into a dataframe format
+df <- data.frame(expand.grid(Week = weeks_hb, Iteration = 1:1000), Smooth=as.numeric(scases_hb), Outbreak=as.numeric(ecases_hb))
+
+library(ggplot2)
+
+pdf("Poster/figures/hb_temporal.pdf", width=17, height=5)
+cols = c(C= '#0000001f', B= '#0000002f', D='red', A='black')
+ggplot(df) + geom_ribbon(aes(x=Week,ymin=Min,ymax=Max, fill='C')) +
+  geom_ribbon(aes(x=Week,ymin=LQ,ymax=UQ, fill='B')) +
+#  geom_line(aes(x=Week,y=Outbreaks), col='red') +
+  geom_ribbon(aes(x=Week,ymin=Median,ymax=Outbreaks, fill='D', col='D'), size=0.5) +
+  geom_ribbon(aes(x=Week,ymin=Median,ymax=Median,fill='A', col='A'), size=1) +
+  theme_bw(base_size=20) + scale_x_date(name="", expand=c(0,0), breaks=as.Date(paste0(2010:2016,'-01-01')), labels=2010:2016) +
+  scale_y_continuous(name="Cases per week", limits=c(0,15)) +
+  scale_fill_manual(name="",labels=c("Expected cases   ", "50% CI   ", "95% CI   ", "Outbreaks"), values=cols) +
+  scale_colour_manual(name="Error Bars",values=cols,guide='none') +
+  #  guides(colour=guide_legend(override.aes = list(fill=cols[1:3]))) +
+  theme(axis.title.x=element_blank(),
+        legend.position = c(0.5,0.95), legend.direction='horizontal')
+#  guides(fill=guide_legend(keywidth=0.5, keyheight=0.1, default.unit="inch"))
+dev.off()
+
+pdf("Poster/figures/hb_temporal.pdf", width=17, height=5)
+plot_temporal(weeks_hb, scases_hb, ecases_hb, week=NA)
+axis(2)
+dev.off()
+
+# Outbreak attribution
+library(forcats)
+outbreaks <- rbind(read.csv("Poster/data/pahiatua.csv") %>% mutate(Outbreak="Pahiatua"),
+                   read.csv("Poster/data/rawmilk.csv") %>% mutate(Outbreak="Raw milk")) %>%
+  mutate(Source = fct_relevel(Source, "Poultry", "Cattle", "Sheep", "Other"))
+
+library(ggplot2)
+pdf("Poster/figures/outbreak_attribution_pahiatua.pdf", width=6, height=6)
+ggplot(outbreaks %>% filter(Outbreak == "Pahiatua")) +
+  geom_violin(aes(Source, p, fill=Source), scale='width') +
+  theme_bw(base_size=15) +
+  scale_fill_manual(values = c("plum4", "steelblue", "steelblue2", "brown"), guide = "none") +
+  xlab("") +
+  coord_flip() +
+  scale_y_continuous(name = "Attribution of human cases", labels = scales::percent) +
+  scale_x_discrete(limits=rev(levels(outbreaks$Source)))
+dev.off()
+
+pdf("Poster/figures/outbreak_attribution_rawmilk.pdf", width=6, height=6)
+ggplot(outbreaks %>% filter(Outbreak == "Raw milk")) +
+  geom_violin(aes(Source, p, fill=Source), scale='width') +
+  theme_bw(base_size=15) +
+  scale_fill_manual(values = c("plum4", "steelblue", "steelblue2", "brown"), guide = "none") +
+  xlab("") +
+  coord_flip() +
+  scale_y_continuous(name = "Attribution of human cases", labels = scales::percent) +
+  scale_x_discrete(limits=rev(levels(outbreaks$Source)))
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# This code is used to union up to the various outbreak regions
+au_reg = phu@data %>% left_join(AU$data$spat_list, by=c("MB06"="Spatial"))
+au_shp = unionSpatialPolygons(phu, sprintf("%02d", au_reg$Region))
+ta_reg = phu@data %>% left_join(TA$data$spat_list, by=c("MB06"="Spatial"))
+ta_shp = unionSpatialPolygons(phu, sprintf("%02d", ta_reg$Region))
+
+
+
+
+
 
 # outbreak plot...
 mean_case_rate <- function(mod, data) {
@@ -164,7 +361,7 @@ plot_ob_map2 <- function(map, x, bbox = sp::bbox(phu)) {
     red_func <- colorRamp(brewer.pal(9, "Reds")[-1], space="Lab")
     rgb(red_func(pmin(x,1)), maxColorValue = 255)
   }
-  sp::plot(map, col=red(x), lwd=0.5, border='grey50', xlim=bbox[1,], ylim=bbox[2,])
+  sp::plot(map, col=red(x), lwd=0.5, border='grey50', xlim5623977=bbox[1,], ylim=bbox[2,])
   #  sp::plot(phu, add=TRUE, col=red(map_dat$P), border=NA)
 }
 
@@ -188,16 +385,6 @@ up_bks = quantile(U[U > 0], seq(1,num_cols,by=2)/num_cols)
 lo_bks = quantile(U[U < 0], seq(num_cols-1,0,by=-2)/num_cols)
 bks = round(pmax(up_bks, abs(lo_bks)), 3)
 breaks = c(-rev(bks), bks)
-
-au_reg = phu@data %>% left_join(AU$data$spat_list, by=c("MB06"="Spatial"))
-au_shp = unionSpatialPolygons(phu, sprintf("%02d", au_reg$Region))
-ta_reg = phu@data %>% left_join(TA$data$spat_list, by=c("MB06"="Spatial"))
-ta_shp = unionSpatialPolygons(phu, sprintf("%02d", ta_reg$Region))
-
-scasesTA = apply(epiclustR:::ssapply(TA$mod, epiclustR:::extract_variable, 'scases'), 1, median)
-ecasesTA = apply(epiclustR:::ssapply(TA$mod, epiclustR:::extract_variable, 'ecases'), 1, median)
-scasesAU = apply(epiclustR:::ssapply(AU$mod, epiclustR:::extract_variable, 'scases'), 1, median)
-ecasesAU = apply(epiclustR:::ssapply(AU$mod, epiclustR:::extract_variable, 'ecases'), 1, median)
 
 library(dplyr)
 
