@@ -111,20 +111,30 @@ plot_map <- function(map, risk_var, uncertainty_var, ...) {
   plot(map[1], col=map_col, ...)
 }
 
+havelock <- st_union(hb_risk %>% filter(Region == "Havelock"))
 
 # Doing the plot, ya'll
-xlim <- c(1688987, 2075499)
-ylim <- c(5328733, 5814989) + 50000
+xlim <- 1695000 + c(0,330000)
+ylim <- 5400000 + c(0,330000 * 46.8/33.1)
+pdf("Poster/figures/test.pdf")
+par(mar=c(0,0,0,0))
+plot(nz["REGION"], col='grey70', border=NA, main='')
+rect(xlim[1], ylim[1], xlim[2], ylim[2], col=NA, border='black', lwd=2)
+dev.off()
+
+xlim <- 1700000 + c(0,330000)
+ylim <- 5405000 + c(0,330000 * 46.8/33.1)
 pdf("Poster/figures/main.pdf", width=33.1, height=46.8)
 par(mar=c(0,0,0,0))
 plot(nz["REGION"], col='grey70', border=NA, xlim=xlim, ylim=ylim, main='')
 plot_map(mc_risk, 'Risk.2', 'Uncertainty.2', lwd=0.02, border=NA, add=TRUE)
 plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border=NA, add=TRUE)
 
-plot(mc_u, col=NA, border='black', lwd=1, add=TRUE)
-plot(hb_u, col=NA, border='black', lwd=1, add=TRUE)
+plot(mc_u, col=NA, border='black', lwd=2, add=TRUE)
+plot(hb_u, col=NA, border='black', lwd=2, add=TRUE)
+plot(havelock, col=NA, border='red3', lwd=3, add=TRUE)
 xlim <- 1920000 + c(0, 20000)
-ylim <- 5600000 + c(0, 25000)
+ylim <- 5599000 + c(0, 25000)
 rect(xlim[1], ylim[1], xlim[2], ylim[2], col=NA, border='black', lwd=2)
 
 xlim <- 1817500 + c(0,9000)
@@ -139,11 +149,11 @@ dev.off()
 # First MidCentral
 xlim <- 1817500 + c(0,9000)
 ylim <- 5525000 + c(0,9000)
-pdf("Poster/figures/mc2006.pdf", width=7, height=7)
+pdf("Poster/figures/mc2006.pdf", width=7.5, height=7.5)
 par(mar=c(0,0,0,0))
 plot_map(mc_risk, 'Risk.1', 'Uncertainty.1', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
 dev.off()
-pdf("Poster/figures/mc2016.pdf", width=7, height=7)
+pdf("Poster/figures/mc2016.pdf", width=7.5, height=7.5)
 par(mar=c(0,0,0,0))
 plot_map(mc_risk, 'Risk.2', 'Uncertainty.2', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
 dev.off()
@@ -153,11 +163,32 @@ xlim <- c(1920791, 1942290)
 ylim <- c(5597710, 5625823)
 plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
 
-pdf("Poster/figures/hn_hastings.pdf", width=8, height=10)
+pdf("Poster/figures/hn_hastings.pdf", width=7.5, height=10)
 par(mar=c(0,0,0,0))
-xlim <- 1920000 + c(0, 20000)
-ylim <- 5600000 + c(0, 25000)
+xlim <- 1920000 + c(0, 18750)
+ylim <- 5599000 + c(0, 25000)
 plot_map(hb_risk, 'Risk', 'Uncertainty', lwd=0.02, border='grey80', xlim=xlim, ylim=ylim, main='')
+plot(havelock, col=NA, border='red3', lwd=3, add=TRUE)
+dev.off()
+
+# Legend, you bloody legend!
+super_sat <- alpha_cols[1,seq(1,101,by=10)]
+pdf("Poster/figures/legend.pdf", width=10, height=2)
+par(mar=c(3,1.1,0.2,7), mgp=c(2,0.5,0.2), tcl=-0.3, cex=1.3)
+plot(c(0,101),c(0,11),type='n', axes=FALSE, xlab="", ylab="", xaxs='i', yaxs='i')
+
+lapply(1:11, function(x) { rect(0:100,x-1,1:101,x,col=alpha_cols[x,],border=alpha_cols[x,]) })
+sw1 <- seq(1,41,by=10)
+sw2 <- seq(62,102,by=10)
+br <- c(breaks[sw1],0,breaks[sw2])
+myround <- function(x) {
+  nc <- ifelse(x < 0.05, 3, ifelse(x < 0.6, 2, ifelse(x > 2, 0, 1)))
+  unlist(lapply(seq_along(x), function(y) { as.character(round(x[y], nc[y])) }))
+}
+axis(1, labels=myround(exp(br)), at=c(sw1-1,50.5,sw2-1))
+title(xlab="Relative Risk")
+axis(4, labels=c("Low uncertainty", "High uncertainty"), at=c(0.5,10.5), line=-0.2, pos=NA, tick=FALSE, las=1)
+#title(ylab="Uncertainty")
 dev.off()
 
 #pdf("Poster/figures/hn_napier.pdf", width=6, height=6)
@@ -208,34 +239,61 @@ extract_temporal <- function(mod, var) {
 scases_hb = extract_temporal(dat_hb$mod, 'scases')
 ecases_hb = apply(extract_temporal(dat_hb$mod, 'ecases'),1,median)
 # extract out the median trend
-df <- data.frame(Week = weeks_hb, t(apply(scases_hb, 1, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))), Outbreaks=ecases_hb)
-names(df)[2:6] <- c("Min", "LQ", "Median", "UQ", "Max")
-
-# rearrange into a dataframe format
-df <- data.frame(expand.grid(Week = weeks_hb, Iteration = 1:1000), Smooth=as.numeric(scases_hb), Outbreak=as.numeric(ecases_hb))
+df <- data.frame(Week = weeks_hb, Cases = apply(dat_hb$data$cases, 1, sum), t(apply(scases_hb, 1, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))), Outbreaks=ecases_hb)
+names(df)[1:5+2] <- c("Min", "LQ", "Median", "UQ", "Max")
 
 library(ggplot2)
 
 pdf("Poster/figures/hb_temporal.pdf", width=17, height=5)
-cols = c(C= '#0000001f', B= '#0000002f', D='red', A='black')
-ggplot(df) + geom_ribbon(aes(x=Week,ymin=Min,ymax=Max, fill='C')) +
+cols = c(C= '#0000001f', B= '#0000002f', D='red')
+ggplot(df) + 
+  geom_line(aes(x=Week,y=Cases, col='A')) +
+  geom_ribbon(aes(x=Week,ymin=Min,ymax=Max, fill='C')) +
   geom_ribbon(aes(x=Week,ymin=LQ,ymax=UQ, fill='B')) +
 #  geom_line(aes(x=Week,y=Outbreaks), col='red') +
-  geom_ribbon(aes(x=Week,ymin=Median,ymax=Outbreaks, fill='D', col='D'), size=0.5) +
-  geom_ribbon(aes(x=Week,ymin=Median,ymax=Median,fill='A', col='A'), size=1) +
+  geom_ribbon(aes(x=Week,ymin=Median,ymax=Outbreaks, fill='D'), size=0.5, col='red') +
+  geom_line(aes(x=Week,y=Median, col='B'), size=1) +
+  #  geom_ribbon(aes(x=Week,ymin=Median,ymax=Median,fill='A', col='A'), size=1) +
   theme_bw(base_size=20) + scale_x_date(name="", expand=c(0,0), breaks=as.Date(paste0(2010:2016,'-01-01')), labels=2010:2016) +
   scale_y_continuous(name="Cases per week", limits=c(0,15)) +
-  scale_fill_manual(name="",labels=c("Expected cases   ", "50% CI   ", "95% CI   ", "Outbreaks"), values=cols) +
-  scale_colour_manual(name="Error Bars",values=cols,guide='none') +
+  scale_colour_manual(name="", labels=c("Cases   ", "Expected cases"), values=c(A='#0000002f', B='black'),
+                      guide=guide_legend(order=1)) +
+  scale_fill_manual(name="",labels=c("50% CI   ", "95% CI   ", "Outbreaks"), values=cols,
+                    guide=guide_legend(override.aes=list(col=NA), order=2)) +
   #  guides(colour=guide_legend(override.aes = list(fill=cols[1:3]))) +
   theme(axis.title.x=element_blank(),
-        legend.position = c(0.5,0.95), legend.direction='horizontal')
+        legend.position = c(0.5,0.95), legend.direction='horizontal', legend.box='horizontal')
 #  guides(fill=guide_legend(keywidth=0.5, keyheight=0.1, default.unit="inch"))
 dev.off()
 
-pdf("Poster/figures/hb_temporal.pdf", width=17, height=5)
-plot_temporal(weeks_hb, scases_hb, ecases_hb, week=NA)
-axis(2)
+scases_mc = extract_temporal(dat_mc$mod, 'scases')
+ecases_mc = apply(extract_temporal(dat_mc$mod, 'ecases'),1,median)
+# extract out the median trend
+df <- data.frame(Week = weeks_mc, Cases = apply(dat_mc$data$cases, 1, sum), t(apply(scases_mc, 1, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))), Outbreaks=ecases_mc)
+names(df)[1:5+2] <- c("Min", "LQ", "Median", "UQ", "Max")
+
+library(ggplot2)
+
+pdf("Poster/figures/mc_temporal.pdf", width=23.8, height=5)
+cols = c(C= '#0000001f', B= '#0000002f', D='red')
+ggplot(df) + 
+  geom_line(aes(x=Week,y=Cases, col='A')) +
+  geom_ribbon(aes(x=Week,ymin=Min,ymax=Max, fill='C')) +
+  geom_ribbon(aes(x=Week,ymin=LQ,ymax=UQ, fill='B')) +
+  #  geom_line(aes(x=Week,y=Outbreaks), col='red') +
+  geom_ribbon(aes(x=Week,ymin=Median,ymax=Outbreaks, fill='D'), size=0.5, col='red') +
+  geom_line(aes(x=Week,y=Median, col='B'), size=1) +
+  #  geom_ribbon(aes(x=Week,ymin=Median,ymax=Median,fill='A', col='A'), size=1) +
+  theme_bw(base_size=20) + scale_x_date(name="", expand=c(0,0), breaks=as.Date(paste0(2006:2016,'-01-01')), labels=2006:2016) +
+  scale_y_continuous(name="Cases per week", limits=c(0,15)) +
+  scale_colour_manual(name="", labels=c("Cases   ", "Expected cases"), values=c(A='#0000002f', B='black'),
+                      guide=guide_legend(order=1)) +
+  scale_fill_manual(name="",labels=c("50% CI   ", "95% CI   ", "Outbreaks"), values=cols,
+                    guide=guide_legend(override.aes=list(col=NA), order=2)) +
+  #  guides(colour=guide_legend(override.aes = list(fill=cols[1:3]))) +
+  theme(axis.title.x=element_blank(),
+        legend.position = c(0.5,0.95), legend.direction='horizontal', legend.box='horizontal')
+#  guides(fill=guide_legend(keywidth=0.5, keyheight=0.1, default.unit="inch"))
 dev.off()
 
 # Outbreak attribution
