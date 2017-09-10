@@ -27,9 +27,9 @@ W<sub>it</sub> = &beta; X<sub>it</sub>
 
 where X<sub>it</sub> is an indicator variable, set to 1 if there's an outbreak and 0 if there isn't, that is one with probability p<sub>it</sub> and &beta; is the (average) size of each outbreak.  The prior on p<sub>it</sub> allows 1 outbreak per year per region on average.  Priors on p<sub>it</sub> then allow these outbreaks to be correlated through time (e.g. for a disease where person to person transmission occurs) or uncorrelated through time.  The default implementation is uncorrelated in time.
 
-<center>
-   <video src='http://jmarshallnz.github.io/talks/video/temporal_fit.mp4' width='960px' loop='true' autoplay='true'/>
-</center>
+<a href="http://jmarshallnz.github.io/talks/video/temporal_fit.mp4">
+   <img src='temporal_fit.png' width='960' height='480' />
+</a>
 
 Data format
 -----------
