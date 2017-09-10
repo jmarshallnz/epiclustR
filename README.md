@@ -5,9 +5,9 @@ epiclustR
 
 epiclustR is a spatio-temporal modelling tool for estimating the spatial and temporal risk of disease, and estimating the probability of an anomolous event (a potential 'outbreak') where risk is higher than would be expected given the spatial and temporal trends.
 
-<center>
-   <video src='http://jmarshallnz.github.io/talks/video/spatial_fit.mp4' width='960px' loop='true' autoplay='true'/>
-</center>
+<a href="http://jmarshallnz.github.io/talks/video/spatial_fit.mp4">
+   <img src='spatial_fit.png' width='960' height='540' />
+</a>
 
 The model of disease is given by
 
