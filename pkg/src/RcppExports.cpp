@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // deviance
 double deviance(List data, List state);
-RcppExport SEXP epiclustR_deviance(SEXP dataSEXP, SEXP stateSEXP) {
+RcppExport SEXP _epiclustR_deviance(SEXP dataSEXP, SEXP stateSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // log_case_rate
 Rcpp::NumericMatrix log_case_rate(List data, List state, bool smoothed, IntegerVector spatial);
-RcppExport SEXP epiclustR_log_case_rate(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
+RcppExport SEXP _epiclustR_log_case_rate(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,7 +33,7 @@ END_RCPP
 }
 // expected_cases
 Rcpp::NumericMatrix expected_cases(List data, List state, bool smoothed, IntegerVector spatial);
-RcppExport SEXP epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
+RcppExport SEXP _epiclustR_expected_cases(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,7 +47,7 @@ END_RCPP
 }
 // cases_per_time
 Rcpp::NumericVector cases_per_time(List data, List state, bool smoothed, IntegerVector spatial);
-RcppExport SEXP epiclustR_cases_per_time(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
+RcppExport SEXP _epiclustR_cases_per_time(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +61,7 @@ END_RCPP
 }
 // rbernoulli
 int rbernoulli(double p);
-RcppExport SEXP epiclustR_rbernoulli(SEXP pSEXP) {
+RcppExport SEXP _epiclustR_rbernoulli(SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,7 +72,7 @@ END_RCPP
 }
 // rmvnorm
 Rcpp::NumericVector rmvnorm(NumericVector mu, NumericMatrix eig_sigma);
-RcppExport SEXP epiclustR_rmvnorm(SEXP muSEXP, SEXP eig_sigmaSEXP) {
+RcppExport SEXP _epiclustR_rmvnorm(SEXP muSEXP, SEXP eig_sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -84,7 +84,7 @@ END_RCPP
 }
 // update
 Rcpp::List update(List data, List state, List prior, List control);
-RcppExport SEXP epiclustR_update(SEXP dataSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP controlSEXP) {
+RcppExport SEXP _epiclustR_update(SEXP dataSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP controlSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -95,4 +95,20 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(update(data, state, prior, control));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_epiclustR_deviance", (DL_FUNC) &_epiclustR_deviance, 2},
+    {"_epiclustR_log_case_rate", (DL_FUNC) &_epiclustR_log_case_rate, 4},
+    {"_epiclustR_expected_cases", (DL_FUNC) &_epiclustR_expected_cases, 4},
+    {"_epiclustR_cases_per_time", (DL_FUNC) &_epiclustR_cases_per_time, 4},
+    {"_epiclustR_rbernoulli", (DL_FUNC) &_epiclustR_rbernoulli, 1},
+    {"_epiclustR_rmvnorm", (DL_FUNC) &_epiclustR_rmvnorm, 2},
+    {"_epiclustR_update", (DL_FUNC) &_epiclustR_update, 4},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_epiclustR(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

@@ -8,7 +8,7 @@
 #' @return a matrix containing the log case rate in time and space
 #' @export
 deviance <- function(data, state) {
-    .Call('epiclustR_deviance', PACKAGE = 'epiclustR', data, state)
+    .Call('_epiclustR_deviance', PACKAGE = 'epiclustR', data, state)
 }
 
 #' Computed case rate per time per space
@@ -20,7 +20,7 @@ deviance <- function(data, state) {
 #' @return a matrix containing the expected cases in time and space
 #' @export
 log_case_rate <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
-    .Call('epiclustR_log_case_rate', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
+    .Call('_epiclustR_log_case_rate', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 #' Computed expected cases per time per space
@@ -32,7 +32,7 @@ log_case_rate <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
 #' @return a matrix containing the expected cases in time and space
 #' @export
 expected_cases <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
-    .Call('epiclustR_expected_cases', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
+    .Call('_epiclustR_expected_cases', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 #' Compute expected cases over time
@@ -44,15 +44,15 @@ expected_cases <- function(data, state, smoothed = FALSE, spatial = integer(0)) 
 #' @return a matrix containing the expected cases in time and space
 #' @export
 cases_per_time <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
-    .Call('epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
+    .Call('_epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 rbernoulli <- function(p) {
-    .Call('epiclustR_rbernoulli', PACKAGE = 'epiclustR', p)
+    .Call('_epiclustR_rbernoulli', PACKAGE = 'epiclustR', p)
 }
 
 rmvnorm <- function(mu, eig_sigma) {
-    .Call('epiclustR_rmvnorm', PACKAGE = 'epiclustR', mu, eig_sigma)
+    .Call('_epiclustR_rmvnorm', PACKAGE = 'epiclustR', mu, eig_sigma)
 }
 
 #' Update the MCMC simulation
@@ -64,6 +64,6 @@ rmvnorm <- function(mu, eig_sigma) {
 #' @return a list containing the updated state
 #' @export
 update <- function(data, state, prior, control) {
-    .Call('epiclustR_update', PACKAGE = 'epiclustR', data, state, prior, control)
+    .Call('_epiclustR_update', PACKAGE = 'epiclustR', data, state, prior, control)
 }
 
