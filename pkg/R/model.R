@@ -156,12 +156,14 @@ check_data <- function(data) {
   }
   # check we have population where we have cases
   check_popn <- function(n, cases) {
-    wch <- which(n == 0 & cases > 0, arr.ind = TRUE)
+    wch <- which(n < 1 & cases > 0, arr.ind = TRUE)
     if (nrow(wch) > 0) {
       cat("Setting population to 1 in spatial locations", colnames(data$cases)[wch[,2]],
-          "at times", rownames(data$cases)[wch[,1]], "as we have cases there and popn=0\n")
+          "as we have cases there and popn<1\n")
     }
-    n[wch] = 1
+    for (x in wch[,2]) {
+      n[,x] = pmax(1, n[,x])
+    }
     n
   }
   data$popn <- check_popn(data$popn, data$cases)
