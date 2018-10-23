@@ -4,8 +4,8 @@
 \alias{init_priors}
 \title{Initialize priors}
 \usage{
-init_priors(aR = 5, bR = 5/500, aU = 1, bU = 0.5, aX = 1, bX = 51,
-  abetaX = 1, bbetaX = 1)
+init_priors(aR = 5, bR = 5/500, aU = 1, bU = 0.5, aX = 1,
+  bX = 51, abetaX = 1, bbetaX = 1)
 }
 \arguments{
 \item{aR, bR}{Gamma hyper-prior on precision of R's, defaults to 5, 5/500}
@@ -22,4 +22,3 @@ a list of priors
 \description{
 Initialize priors
 }
-

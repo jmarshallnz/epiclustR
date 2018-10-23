@@ -21,4 +21,3 @@ a list containing the updated state
 \description{
 Update the MCMC simulation
 }
-

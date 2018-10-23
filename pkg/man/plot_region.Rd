@@ -20,4 +20,3 @@ plot_region(mod, data, region = NULL, main = region, ...)
 \description{
 Plot outbreaks from an epiclustR model
 }
-

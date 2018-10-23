@@ -17,4 +17,3 @@ a matrix containing the log case rate in time and space
 \description{
 Deviance
 }
-

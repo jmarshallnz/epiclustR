@@ -15,4 +15,3 @@ the checked (and possibly updated) data for the model
 \description{
 Checks the data and updates it, e.g. for no population where we have cases
 }
-

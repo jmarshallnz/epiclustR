@@ -21,4 +21,3 @@ a matrix containing the expected cases in time and space
 \description{
 Computed expected cases per time per space
 }
-

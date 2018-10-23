@@ -21,4 +21,3 @@ the posterior for this chain
 \description{
 Fits the epiclustR model for the given dataset
 }
-

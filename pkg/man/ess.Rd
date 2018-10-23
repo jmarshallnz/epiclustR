@@ -16,4 +16,3 @@ The expected sample size for the variable (i.e. estimated number of independent 
 Computation taken from the `rstan` package. Included here so that the package
 can be as self-contained as possible.
 }
-

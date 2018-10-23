@@ -16,4 +16,3 @@ The split-R-hat for the variable in question. Should be close to 1 on convergenc
 Computation taken from the `rstan` package. Included here so that the package
 can be as self-contained as possible.
 }
-

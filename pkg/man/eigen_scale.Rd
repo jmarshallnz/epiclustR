@@ -15,4 +15,3 @@ the scaled eigenvectors of A
 \description{
 Computes the scaled eigen-vectors of a matrix A
 }
-

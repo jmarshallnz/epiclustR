@@ -4,9 +4,9 @@
 \alias{init_control}
 \title{Initialize the MCMC control parameters for fitting the epiclustR model}
 \usage{
-init_control(samples = 1000, chains = 4, thinning = 50, burnin = 20,
-  parallel = chains > 1, sigmaR = 1, sigmaU = 1, sigmaX = 1,
-  blockR = c(4, 5, 9, 11))
+init_control(samples = 1000, chains = 4, thinning = 50,
+  burnin = 20, parallel = chains > 1, sigmaR = 1, sigmaU = 1,
+  sigmaX = 1, blockR = c(4, 5, 9, 11))
 }
 \arguments{
 \item{samples}{The number of posterior samples required. These will be distributed
@@ -37,4 +37,3 @@ list containing the MCMC control parameters.
 \description{
 Initialize the MCMC control parameters for fitting the epiclustR model
 }
-

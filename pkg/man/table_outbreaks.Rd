@@ -18,4 +18,3 @@ table_outbreaks(mod, data, period = NULL, threshold = 0.2)
 \description{
 Table of outbreaks from an epiclustR model
 }
-

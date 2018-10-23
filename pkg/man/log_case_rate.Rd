@@ -21,4 +21,3 @@ a matrix containing the expected cases in time and space
 \description{
 Computed case rate per time per space
 }
-

@@ -12,4 +12,3 @@ plot_traces(mod)
 \description{
 Plot traces from MCMC chains to assess convergence
 }
-

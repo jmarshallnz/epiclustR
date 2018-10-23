@@ -21,4 +21,3 @@ the posterior for this chain
 \description{
 Fits an MCMC chain for the epiclustR model for the given dataset
 }
-

@@ -59,6 +59,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// case_rate_per_time
+Rcpp::NumericVector case_rate_per_time(List data, List state, bool smoothed, IntegerVector spatial);
+RcppExport SEXP _epiclustR_case_rate_per_time(SEXP dataSEXP, SEXP stateSEXP, SEXP smoothedSEXP, SEXP spatialSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< List >::type state(stateSEXP);
+    Rcpp::traits::input_parameter< bool >::type smoothed(smoothedSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type spatial(spatialSEXP);
+    rcpp_result_gen = Rcpp::wrap(case_rate_per_time(data, state, smoothed, spatial));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rbernoulli
 int rbernoulli(double p);
 RcppExport SEXP _epiclustR_rbernoulli(SEXP pSEXP) {
@@ -102,6 +116,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_epiclustR_log_case_rate", (DL_FUNC) &_epiclustR_log_case_rate, 4},
     {"_epiclustR_expected_cases", (DL_FUNC) &_epiclustR_expected_cases, 4},
     {"_epiclustR_cases_per_time", (DL_FUNC) &_epiclustR_cases_per_time, 4},
+    {"_epiclustR_case_rate_per_time", (DL_FUNC) &_epiclustR_case_rate_per_time, 4},
     {"_epiclustR_rbernoulli", (DL_FUNC) &_epiclustR_rbernoulli, 1},
     {"_epiclustR_rmvnorm", (DL_FUNC) &_epiclustR_rmvnorm, 2},
     {"_epiclustR_update", (DL_FUNC) &_epiclustR_update, 4},

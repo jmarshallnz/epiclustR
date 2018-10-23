@@ -41,10 +41,22 @@ expected_cases <- function(data, state, smoothed = FALSE, spatial = integer(0)) 
 #' @param state the current state of the Markov chain
 #' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
 #' @param spatial the set of spatial regions to compute the expected cases at
-#' @return a matrix containing the expected cases in time and space
+#' @return a matrix containing the expected cases in time over the spatial range given
 #' @export
 cases_per_time <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
     .Call('_epiclustR_cases_per_time', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
+}
+
+#' Compute expected case rate over time
+#'
+#' @param data a list containing the data
+#' @param state the current state of the Markov chain
+#' @param smoothed set true to smooth the cases (i.e. preclude outbreaks). Defaults to false
+#' @param spatial the set of spatial regions to compute the expected cases at
+#' @return a matrix containing the expected case rate in time over the spatial range given
+#' @export
+case_rate_per_time <- function(data, state, smoothed = FALSE, spatial = integer(0)) {
+    .Call('_epiclustR_case_rate_per_time', PACKAGE = 'epiclustR', data, state, smoothed, spatial)
 }
 
 rbernoulli <- function(p) {

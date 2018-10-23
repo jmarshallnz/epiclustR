@@ -15,4 +15,3 @@ a list for reverse lookups from levels to vector entries in `luv`
 \description{
 Initialize a reverse lookup table from a lookup vector
 }
-

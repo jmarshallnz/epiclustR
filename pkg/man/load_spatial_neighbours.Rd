@@ -28,4 +28,3 @@ i.e. there are 6 spatial units in the
 file above, and unit 1 has 5 neighbours which are units 2 through 5,
 while unit 2 has 2 neighbours (1 and 3).
 }
-

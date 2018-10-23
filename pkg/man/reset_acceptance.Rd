@@ -15,4 +15,3 @@ the state, with the acceptance probabilities reset
 \description{
 Reset the acceptance variables in the model state
 }
-

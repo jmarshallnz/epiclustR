@@ -24,4 +24,3 @@ plot_temporal(mod, data, spatial = NULL, region = NULL,
 \description{
 Plot the temporal fit of the epiclustR model
 }
-

@@ -31,4 +31,3 @@ which uses the bounding box of the shapefile.}
 \description{
 Plot spatial trends from an epiclustR model
 }
-

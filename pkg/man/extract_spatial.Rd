@@ -18,4 +18,3 @@ pull out U and R from the posterior
 \description{
 Extract spatial trend(s) from an epiclustR model state
 }
-

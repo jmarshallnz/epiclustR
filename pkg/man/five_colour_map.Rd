@@ -18,4 +18,3 @@ should be.
 \description{
 Colour regions on a map defined by groupings of spatial units using the five colour algorithm
 }
-

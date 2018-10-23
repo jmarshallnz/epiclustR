@@ -16,9 +16,8 @@ cases_per_time(data, state, smoothed = FALSE, spatial = integer(0))
 \item{spatial}{the set of spatial regions to compute the expected cases at}
 }
 \value{
-a matrix containing the expected cases in time and space
+a matrix containing the expected cases in time over the spatial range given
 }
 \description{
 Compute expected cases over time
 }
-

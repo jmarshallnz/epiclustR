@@ -16,4 +16,3 @@ a list of constructed block matrices containing K_eigen, K_bef and K_aft
 Construct the cholesky/eigen matrix for a block update of the given length as well
 as pre and post matrices (left and right of main block)
 }
-

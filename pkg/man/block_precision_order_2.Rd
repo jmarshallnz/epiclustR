@@ -16,4 +16,3 @@ The precision matrix K corresponding to a random walk of order 2.
 Computes the precision matrix for a random walk of order 2
 of the given block size
 }
-
