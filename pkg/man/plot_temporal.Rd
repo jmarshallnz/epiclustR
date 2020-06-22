@@ -4,9 +4,18 @@
 \alias{plot_temporal}
 \title{Plot the temporal fit of the epiclustR model}
 \usage{
-plot_temporal(mod, data, spatial = NULL, region = NULL,
-  col_cases = "grey80", col_trend = "black", col_outbreaks = "red",
-  lwd_cases = 1, lwd_trend = 2, lwd_outbreaks = 1)
+plot_temporal(
+  mod,
+  data,
+  spatial = NULL,
+  region = NULL,
+  col_cases = "grey80",
+  col_trend = "black",
+  col_outbreaks = "red",
+  lwd_cases = 1,
+  lwd_trend = 2,
+  lwd_outbreaks = 1
+)
 }
 \arguments{
 \item{mod}{the model to plot}

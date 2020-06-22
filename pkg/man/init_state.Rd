@@ -4,8 +4,16 @@
 \alias{init_state}
 \title{Initialize the model state}
 \usage{
-init_state(ntimes, nspace, nregions, nperiods, fe = -10, pX = 0.1,
-  kU = 1, kR = 1)
+init_state(
+  ntimes,
+  nspace,
+  nregions,
+  nperiods,
+  fe = -10,
+  pX = 0.1,
+  kU = 1,
+  kR = 1
+)
 }
 \arguments{
 \item{ntimes}{The number of time points}
