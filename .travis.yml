@@ -1,8 +1,0 @@
-language: r
-cache: packages
-before_install:
-  - cd pkg
-r_packages:
-  - covr
-after_success:
-  - Rscript -e 'covr::codecov()'
