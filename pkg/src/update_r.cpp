@@ -97,7 +97,7 @@ void update_r(const Data &data,
       ap = r_likelihood(data, s, proposal, j); // prior ratio and proposal ratio cancel
     }
     double un = R::unif_rand();
-    if (ap >= 0 | un <= ::exp(ap)) {
+    if (ap >= 0 || un <= ::exp(ap)) {
       std::copy(proposal.begin(), proposal.end(), s.R.begin() + j);
       s.acceptR[method]++;
     } else {
