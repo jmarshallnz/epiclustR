@@ -1,7 +1,6 @@
 Package: epiclustR
-Title: Spatio-temporal modelling of disease cases for areal data for detecting
-    outbreaks
-Version: 0.0.0.9000
+Title: Spatio-Temporal Modelling of Disease Cases for Areal Data for Detecting Outbreaks
+Version: 0.0.1
 Authors@R: person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz", role = c("aut", "cre"))
 Description: Fits a spatio-temporal model to disease case data at the areal
     level and estimates smooth temporal and spatial trends in addition
