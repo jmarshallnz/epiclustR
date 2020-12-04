@@ -1,5 +1,9 @@
 [![Build Status](https://travis-ci.org/jmarshallnz/epiclustR.svg?branch=master)](https://travis-ci.org/jmarshallnz/epiclustR)
 
+<!-- badges: start -->
+[![R build status](https://github.com/jmarshallnz/epiclustR/workflows/R-CMD-check/badge.svg)](https://github.com/jmarshallnz/epiclustR/actions)
+<!-- badges: end -->
+
 epiclustR
 =========
 
